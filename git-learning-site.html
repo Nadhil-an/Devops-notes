@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Git, Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;
+    --panel:#141B24;
+    --panel2:#1B2430;
+    --line:#26303C;
+    --orange:#F05033;
+    --orange-dim:#7a2c1e;
+    --blue:#58A6FF;
+    --green:#3FB950;
+    --amber:#D29922;
+    --purple:#BC8CFF;
+    --text:#E6EDF3;
+    --muted:#8B98A5;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(240,80,51,0.10), transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(88,166,255,0.08), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+
+  /* HERO */
+  .hero{
+    padding:34px 30px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:linear-gradient(160deg, rgba(240,80,51,0.08), rgba(20,27,36,0.4));
+    position:relative;
+    overflow:hidden;
+    margin-bottom:28px;
+  }
+  .hero-eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--orange);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .hero h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(30px,5vw,46px);
+    margin:0 0 10px;
+    line-height:1.05;
+    letter-spacing:-0.01em;
+  }
+  .hero h1 span{color:var(--orange);}
+  .hero p{color:var(--muted);max-width:560px;margin:0 0 20px;font-size:15px;line-height:1.55;}
+  .hero-graph{width:100%;max-width:600px;display:block;}
+
+  /* NAV */
+  .tabs{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:14px;
+  }
+  .tab{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:0.02em;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--muted);
+    padding:9px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .tab:hover{color:var(--text);border-color:#3a4550;}
+  .tab.active{
+    color:#fff;
+    background:var(--orange);
+    border-color:var(--orange);
+  }
+
+  .section{display:none;animation:fade .25s ease;}
+  .section.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .section-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:22px;
+    margin:0 0 4px;
+  }
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+
+  /* DIAGRAM PANEL */
+  .diagram-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:24px;
+  }
+  .diagram-panel svg{width:100%;height:auto;display:block;}
+  .diagram-caption{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    color:var(--muted);
+    text-align:center;
+    margin-top:10px;
+  }
+
+  /* CARDS (always visible, no tap needed) */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--orange);
+    border-radius:12px;
+    padding:16px 18px;
+  }
+  .card .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--orange);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:8px;
+  }
+  .card .q{
+    font-size:14.5px;
+    font-weight:600;
+    line-height:1.4;
+    margin-bottom:10px;
+  }
+  .card .a{
+    font-size:13px;
+    line-height:1.55;
+    color:#D6E2EE;
+    margin:0;
+    font-style:italic;
+    padding-top:10px;
+    border-top:1px solid var(--line);
+  }
+
+  /* COMMAND TABLE */
+  .cmd-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .cmd-table th{
+    text-align:left;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    color:var(--muted);
+    letter-spacing:.06em;
+    padding:8px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .cmd-table td{
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+    vertical-align:top;
+  }
+  .cmd-table code{
+    font-family:'JetBrains Mono',monospace;
+    background:rgba(240,80,51,0.12);
+    color:var(--orange);
+    padding:2px 7px;
+    border-radius:5px;
+    font-size:12.5px;
+    white-space:nowrap;
+  }
+  .cmd-table tr:last-child td{border-bottom:none;}
+
+  /* STORY CARDS */
+  .story{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--purple);
+    border-radius:10px;
+    padding:18px 20px;
+    margin-bottom:14px;
+  }
+  .story .q{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    color:var(--purple);
+    margin:0 0 8px;
+  }
+  .story p{
+    font-size:13.5px;
+    line-height:1.6;
+    color:#D6E2EE;
+    margin:0;
+    font-style:italic;
+  }
+  .story .fillnote{
+    display:inline-block;
+    margin-top:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    color:var(--amber);
+    background:rgba(210,153,34,0.1);
+    padding:3px 8px;
+    border-radius:5px;
+  }
+
+  /* compare */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;}
+  @media(max-width:640px){.compare{grid-template-columns:1fr;}}
+  .compare-col{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+  }
+  .compare-col h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:16px;
+    margin:0 0 12px;
+  }
+  .compare-col.merge h3{color:var(--blue);}
+  .compare-col.rebase h3{color:var(--amber);}
+
+  .badge-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+  .badge{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    padding:5px 11px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    color:var(--muted);
+  }
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    margin-top:40px;
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  /* TABLE WRAPPER (horizontal scroll on narrow screens) */
+  .table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* RESPONSIVE BREAKPOINTS */
+  @media(max-width:768px){
+    .wrap{padding:24px 14px 60px;}
+    .hero{padding:24px 18px;}
+    .hero p{font-size:14px;}
+    .diagram-panel{padding:16px;}
+    .grid{grid-template-columns:1fr;gap:12px;}
+    .section-title{font-size:19px;}
+  }
+  @media(max-width:480px){
+    .wrap{padding:18px 10px 50px;}
+    .hero{padding:20px 14px;border-radius:14px;}
+    .hero h1{font-size:26px;}
+    .hero-eyebrow{font-size:10.5px;}
+    .badge-row{gap:6px;}
+    .badge{font-size:10px;padding:4px 9px;}
+    .tabs{gap:5px;padding-bottom:10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab{padding:8px 12px;font-size:11.5px;flex:0 0 auto;}
+    .card{padding:14px 15px;}
+    .card .q{font-size:13.5px;}
+    .card .a{font-size:12.5px;}
+    .story{padding:14px 16px;}
+    .story .q{font-size:14px;}
+    .cmd-table th,.cmd-table td{padding:8px;font-size:12px;}
+    .cmd-table code{font-size:11px;padding:2px 5px;white-space:normal;}
+    .diagram-caption{font-size:10px;}
+    .compare-col{padding:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-eyebrow">// entry-level interview prep</div>
+    <h1>Git, <span>Explained</span></h1>
+    <p>Every question and answer laid out together, with diagrams showing what's actually happening under each command — so you remember it instead of memorizing it.</p>
+    <svg class="hero-graph" viewBox="0 0 600 110" xmlns="http://www.w3.org/2000/svg">
+      <line x1="20" y1="55" x2="580" y2="55" stroke="#26303C" stroke-width="2"/>
+      <path d="M 180 55 Q 220 20 260 20 L 380 20 Q 420 20 440 55" fill="none" stroke="#58A6FF" stroke-width="2.5"/>
+      <path d="M 440 55 Q 420 90 380 90 L 260 90 Q 220 90 180 90" fill="none" stroke="#3FB950" stroke-width="2.5" opacity="0.0"/>
+      <circle cx="40" cy="55" r="7" fill="#F05033"/>
+      <circle cx="120" cy="55" r="7" fill="#F05033"/>
+      <circle cx="180" cy="55" r="7" fill="#F05033"/>
+      <circle cx="260" cy="20" r="6" fill="#58A6FF"/>
+      <circle cx="330" cy="20" r="6" fill="#58A6FF"/>
+      <circle cx="440" cy="55" r="7" fill="#F05033"/>
+      <circle cx="510" cy="55" r="7" fill="#F05033"/>
+      <text x="255" y="12" fill="#58A6FF" font-family="JetBrains Mono" font-size="10">feature-branch</text>
+      <text x="30" y="78" fill="#8B98A5" font-family="JetBrains Mono" font-size="10">main</text>
+    </svg>
+  </div>
+
+  <div class="badge-row">
+    <span class="badge">32 cards</span>
+    <span class="badge">6 topics</span>
+    <span class="badge">3 diagrams</span>
+    <span class="badge">real project stories</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="basics">Basics</button>
+    <button class="tab" data-tab="areas">Areas & Flow</button>
+    <button class="tab" data-tab="branching">Branching</button>
+    <button class="tab" data-tab="mergevsrebase">Merge vs Rebase</button>
+    <button class="tab" data-tab="undo">Undo Commands</button>
+    <button class="tab" data-tab="remote">Remote & PR</button>
+    <button class="tab" data-tab="stories">My Stories</button>
+  </div>
+
+  <!-- BASICS -->
+  <div class="section active" id="basics">
+    <h2 class="section-title">Basics</h2>
+    <p class="section-sub">Start here — the foundational "what and why" questions.</p>
+    <div class="grid" id="basics-grid"></div>
+  </div>
+
+  <!-- AREAS -->
+  <div class="section" id="areas">
+    <h2 class="section-title">The Three Areas & Flow</h2>
+    <p class="section-sub">Every file moves through these three stages before it's saved.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="45" width="180" height="90" rx="12" fill="#1B2430" stroke="#26303C"/>
+        <text x="110" y="30" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-size="14" font-weight="600">Working Directory</text>
+        <text x="110" y="85" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">your edited</text>
+        <text x="110" y="100" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">files</text>
+        <path d="M50,120 L170,120" stroke="#F05033" stroke-width="1.5" fill="none"/>
+        <circle cx="110" cy="120" r="18" fill="#0D1117" stroke="#F05033" stroke-width="1.5"/>
+        <text x="110" y="124" text-anchor="middle" fill="#F05033" font-family="JetBrains Mono" font-size="18">✎</text>
+
+        <path d="M205 90 L255 90" stroke="#F05033" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="230" y="80" text-anchor="middle" fill="#F05033" font-family="JetBrains Mono" font-size="10">git add</text>
+
+        <rect x="260" y="45" width="180" height="90" rx="12" fill="#1B2430" stroke="#26303C"/>
+        <text x="350" y="30" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-size="14" font-weight="600">Staging Area</text>
+        <text x="350" y="90" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">ready to</text>
+        <text x="350" y="105" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">be saved</text>
+
+        <path d="M445 90 L495 90" stroke="#D29922" stroke-width="2" marker-end="url(#arrow2)"/>
+        <text x="470" y="80" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="10">git commit</text>
+
+        <rect x="500" y="45" width="180" height="90" rx="12" fill="#1B2430" stroke="#26303C"/>
+        <text x="590" y="30" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-size="14" font-weight="600">Repository</text>
+        <text x="590" y="90" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">saved</text>
+        <text x="590" y="105" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">snapshots</text>
+
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#F05033"/>
+          </marker>
+          <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#D29922"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Working Directory → (git add) → Staging Area → (git commit) → Repository</div>
+    </div>
+    <div class="grid" id="areas-grid"></div>
+  </div>
+
+  <!-- BRANCHING -->
+  <div class="section" id="branching">
+    <h2 class="section-title">Branching</h2>
+    <p class="section-sub">Why teams don't just work directly on main.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
+        <line x1="30" y1="150" x2="670" y2="150" stroke="#8B98A5" stroke-width="2.5"/>
+        <text x="30" y="175" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">main</text>
+        <circle cx="80" cy="150" r="8" fill="#8B98A5"/>
+        <circle cx="200" cy="150" r="8" fill="#8B98A5"/>
+        <circle cx="560" cy="150" r="8" fill="#8B98A5"/>
+        <circle cx="650" cy="150" r="8" fill="#3FB950"/>
+
+        <path d="M200,150 C280,150 280,60 360,60" fill="none" stroke="#F05033" stroke-width="2.5"/>
+        <circle cx="280" cy="90" r="7" fill="#F05033"/>
+        <circle cx="360" cy="60" r="7" fill="#F05033"/>
+        <circle cx="440" cy="60" r="7" fill="#F05033"/>
+        <text x="360" y="40" text-anchor="middle" fill="#F05033" font-family="JetBrains Mono" font-size="12">feature/login-otp</text>
+        <path d="M440,60 C500,60 500,150 560,150" fill="none" stroke="#F05033" stroke-width="2.5"/>
+        <text x="500" y="115" fill="#3FB950" font-family="JetBrains Mono" font-size="11">merge</text>
+
+        <path d="M200,150 C260,150 260,220 340,220" fill="none" stroke="#58A6FF" stroke-width="2.5"/>
+        <circle cx="260" cy="185" r="7" fill="#58A6FF"/>
+        <circle cx="340" cy="220" r="7" fill="#58A6FF"/>
+        <text x="340" y="240" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-size="12">feature/kyc-upload</text>
+      </svg>
+      <div class="diagram-caption">Each feature gets its own branch off main, and merges back in once it's done and tested</div>
+    </div>
+    <div class="grid" id="branching-grid"></div>
+  </div>
+
+  <!-- MERGE VS REBASE -->
+  <div class="section" id="mergevsrebase">
+    <h2 class="section-title">Merge vs Rebase</h2>
+    <p class="section-sub">The most commonly confused pair in Git interviews.</p>
+    <div class="compare">
+      <div class="compare-col merge">
+        <h3>Merge</h3>
+        <svg viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg">
+          <line x1="15" y1="80" x2="245" y2="80" stroke="#8B98A5" stroke-width="2"/>
+          <circle cx="30" cy="80" r="6" fill="#8B98A5"/>
+          <circle cx="90" cy="80" r="6" fill="#8B98A5"/>
+          <path d="M90,80 C130,80 130,25 170,25" fill="none" stroke="#58A6FF" stroke-width="2"/>
+          <circle cx="130" cy="50" r="6" fill="#58A6FF"/>
+          <circle cx="170" cy="25" r="6" fill="#58A6FF"/>
+          <path d="M170,25 C210,25 210,80 230,80" fill="none" stroke="#3FB950" stroke-width="2"/>
+          <circle cx="230" cy="80" r="7" fill="#3FB950"/>
+          <text x="230" y="98" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="9">merge commit</text>
+        </svg>
+        <p style="font-size:13px;color:#D6E2EE;margin-top:6px;">Keeps full history. Adds an extra commit that ties both branches together. History looks like a tree.</p>
+      </div>
+      <div class="compare-col rebase">
+        <h3>Rebase</h3>
+        <svg viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg">
+          <line x1="15" y1="60" x2="245" y2="60" stroke="#8B98A5" stroke-width="2"/>
+          <circle cx="30" cy="60" r="6" fill="#8B98A5"/>
+          <circle cx="90" cy="60" r="6" fill="#8B98A5"/>
+          <circle cx="150" cy="60" r="6" fill="#D29922"/>
+          <circle cx="200" cy="60" r="6" fill="#D29922"/>
+          <circle cx="230" cy="60" r="7" fill="#3FB950"/>
+          <text x="120" y="85" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="9">rewritten to sit on top</text>
+        </svg>
+        <p style="font-size:13px;color:#D6E2EE;margin-top:6px;">Rewrites history into one straight line. Cleaner, but risky if others already pulled the old commits.</p>
+      </div>
+    </div>
+    <div class="grid" id="rebase-grid"></div>
+  </div>
+
+  <!-- UNDO -->
+  <div class="section" id="undo">
+    <h2 class="section-title">Undo Commands</h2>
+    <p class="section-sub">Know which one to reach for — this gets asked almost every time.</p>
+    <div class="diagram-panel">
+      <div class="table-scroll">
+      <table class="cmd-table">
+        <tr><th>Situation</th><th>Command</th></tr>
+        <tr><td>Undo unstaged changes in a file</td><td><code>git restore &lt;file&gt;</code></td></tr>
+        <tr><td>Unstage a file, keep the changes</td><td><code>git reset &lt;file&gt;</code></td></tr>
+        <tr><td>Undo last commit, keep changes</td><td><code>git reset --soft HEAD~1</code></td></tr>
+        <tr><td>Undo last commit, discard changes</td><td><code>git reset --hard HEAD~1</code></td></tr>
+        <tr><td>Undo a commit safely on a shared branch</td><td><code>git revert &lt;hash&gt;</code></td></tr>
+        <tr><td>Save work-in-progress, switch branch cleanly</td><td><code>git stash</code></td></tr>
+      </table>
+      </div>
+      <div class="diagram-caption">reset = rewrites history (risky if shared) · revert = adds a new commit that undoes one (safe)</div>
+    </div>
+    <div class="grid" id="undo-grid"></div>
+  </div>
+
+  <!-- REMOTE -->
+  <div class="section" id="remote">
+    <h2 class="section-title">Remote & Pull Requests</h2>
+    <p class="section-sub">How your local work gets to GitHub and into the team's codebase.</p>
+    <div class="grid" id="remote-grid"></div>
+  </div>
+
+  <!-- STORIES -->
+  <div class="section" id="stories">
+    <h2 class="section-title">My Stories</h2>
+    <p class="section-sub">Real answers for "tell me about a time..." — built from the Sreelakshmi Financiers platform project. Swap in your own specifics where marked.</p>
+    <div id="stories-list"></div>
+  </div>
+
+  <footer>tap a tab above to jump between topics</footer>
+</div>
+
+<script>
+const data = {
+  basics: [
+    ["Basics","What is Git?","Git is a version control system that tracks every change made to code, so you can go back to any previous version, and multiple people can work on the same project safely."],
+    ["Basics","Why do we need Git?","Without it, if two people edit the same file, one person's work gets overwritten. Git tracks every change so nothing gets lost, and I can always see who changed what and when."],
+    ["Basics","Git vs GitHub?","Git is the tool that tracks changes in code on my own computer. GitHub is a website where I can store that code online and share it with others to collaborate."],
+    ["Basics","What does git init do?","It starts a brand new Git project inside a folder, so Git begins tracking changes there."],
+    ["Basics","What does git clone do?","It copies an existing project from GitHub down to my own computer, so I have a full working copy."],
+    ["Basics","What does git log show?","It shows the full history of commits, including who made them and when."],
+    ["Basics","What is a fork?","A fork is my own personal copy of someone else's repository on GitHub, which I can freely change without affecting the original project."],
+    ["Basics","What is HEAD?","HEAD is a pointer that shows which commit or branch I'm currently working on."]
+  ],
+  areas: [
+    ["Areas","What does git add do?","It moves a changed file into the staging area, marking it as ready to be saved in the next commit."],
+    ["Areas","What does git commit do?","It saves a snapshot of everything in the staging area, along with a message describing what changed."],
+    ["Areas","What does git status show?","It shows me which files have changed, which are staged, and which aren't being tracked yet."],
+    ["Areas","What does git diff show?","It shows the exact line-by-line changes I've made that haven't been staged yet."]
+  ],
+  branching: [
+    ["Branching","What is a branch?","A branch is a separate copy of the code where I can work on a new feature or fix, without affecting the main, stable version of the project."],
+    ["Branching","Why branch instead of editing main?","So the main branch always stays stable and working. If my new feature has bugs, it stays isolated in my branch until it's tested and ready."],
+    ["Branching","What does git checkout -b do?","It creates a new branch and switches to it, both in one command."],
+    ["Branching","What is merging?","Merging takes the changes from one branch and combines them into another branch, usually back into main."],
+    ["Branching","What is a merge conflict, and how do you fix it?","A merge conflict happens when Git can't automatically combine two changes made to the same line of code. I fix it by opening the file, choosing the correct final version, removing the conflict markers, and then committing it."]
+  ],
+  rebase: [
+    ["Merge vs Rebase","Difference between merge and rebase?","Merge combines two branches and keeps the full history, including a merge commit. Rebase moves my changes on top of another branch so the history looks like one clean, straight line."],
+    ["Merge vs Rebase","When should you avoid rebase?","I avoid rebasing commits that have already been pushed and shared with others, because it rewrites history and can cause problems for teammates who already pulled the old version."]
+  ],
+  undo: [
+    ["Undo","Difference between reset and revert?","Reset rewrites history and removes commits, which is risky if others already have that history. Revert is safer — it adds a new commit that undoes a previous one, without erasing history."],
+    ["Undo","Undo last commit, keep changes?","I use git reset --soft HEAD~1. It removes the commit but keeps all my changes ready to be committed again."],
+    ["Undo","Discard last commit entirely?","I use git reset --hard HEAD~1. It removes the commit and deletes the changes entirely, so I use it carefully."],
+    ["Undo","What is git stash for?","It temporarily saves my uncommitted changes without committing them, so I can switch branches cleanly and come back to my work later with git stash pop."]
+  ],
+  remote: [
+    ["Remote","What is a remote?","A remote is a version of my project hosted somewhere else, usually on GitHub, that I can push to and pull from."],
+    ["Remote","What does origin mean?","It's just the default nickname Git gives to the main remote repository I'm connected to."],
+    ["Remote","pull vs fetch?","Git fetch downloads the latest changes from GitHub but doesn't apply them to my code. Git pull does the same thing but also merges those changes in automatically."],
+    ["Remote","What is a pull request?","A pull request is a request to merge my branch into the main branch. It lets teammates review my code and leave comments before it gets approved and merged."],
+    ["Remote","What is a typical Git team workflow?","I create a branch, make my changes, commit with a clear message, push it to GitHub, open a pull request, get it reviewed, and then merge it into main."],
+    ["Remote","What is .gitignore for?","It's a file that tells Git which files to skip, like passwords, environment files, or auto-generated folders, so they never get pushed to GitHub by mistake."]
+  ]
+};
+
+function buildGrid(id, items){
+  const grid = document.getElementById(id);
+  items.forEach(([tag,q,a])=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `
+      <div class="tag">${tag}</div>
+      <div class="q">${q}</div>
+      <p class="a">"${a}"</p>`;
+    grid.appendChild(card);
+  });
+}
+buildGrid('basics-grid', data.basics);
+buildGrid('areas-grid', data.areas);
+buildGrid('branching-grid', data.branching);
+buildGrid('rebase-grid', data.rebase);
+buildGrid('undo-grid', data.undo);
+buildGrid('remote-grid', data.remote);
+
+const stories = [
+  ["Have you used Git in a real project?","Yes, I used Git while building a financial services platform for a chit fund company. The project had three separate apps — a customer app, a staff app, and an admin portal — so I used branches to keep each part of the work isolated. I'd create a branch for a specific feature, like a module for one of the apps, work on it, then merge it back into main once it was stable.", null],
+  ["Tell me about a time you resolved a merge conflict.","While working on the staff app, I was updating a shared config or component at the same time as another change was already in main. When I tried to merge, Git flagged a conflict on that file. I opened it, compared both versions line by line, kept the correct logic, removed the conflict markers, tested it locally, then committed and pushed the fix.","fill in with what actually happened"],
+  ["Have you worked with a team using Git, or mostly alone?","I worked mostly independently on this project, so I used Git primarily for version history and safety — committing after every meaningful change so I could roll back if something broke, and using branches to separate experimental changes, like the migration from Flutter to React Native, from stable working code.","adjust to match your truth"],
+  ["Tell me about a mistake you made with Git and how you fixed it.","Early on I committed directly to main a few times before I got disciplined about branching. Once a change broke the build, and I used git revert to safely undo it without losing the commit history, instead of force-resetting and risking losing other work.","fill in with a real example"],
+  ["How do you decide when to commit?","I commit after every small, complete change — like finishing one screen or one function — rather than waiting and bundling many changes together. That way each commit message is meaningful and it's easy to find exactly where something broke if I need to go back.", null],
+  ["How do you write your commit messages?","I try to keep them short but specific — saying what changed and why, like 'fix OTP validation on customer login' instead of just 'fix bug' — so the history is actually useful later.", null]
+];
+const storiesList = document.getElementById('stories-list');
+stories.forEach(([q,a,note])=>{
+  const div = document.createElement('div');
+  div.className='story';
+  div.innerHTML = `<div class="q">${q}</div><p>"${a}"</p>${note?`<div class="fillnote">✎ ${note}</div>`:''}`;
+  storiesList.appendChild(div);
+});
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
