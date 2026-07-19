@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Linux, Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;
+    --panel:#141B24;
+    --panel2:#1B2430;
+    --line:#26303C;
+    --orange:#F05033;
+    --blue:#58A6FF;
+    --green:#3FB950;
+    --amber:#D29922;
+    --purple:#BC8CFF;
+    --text:#E6EDF3;
+    --muted:#8B98A5;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(63,185,80,0.10), transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(88,166,255,0.08), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+
+  /* HERO */
+  .hero{
+    padding:34px 30px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:linear-gradient(160deg, rgba(63,185,80,0.08), rgba(20,27,36,0.4));
+    position:relative;
+    overflow:hidden;
+    margin-bottom:28px;
+  }
+  .hero-eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--green);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .hero h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(30px,5vw,46px);
+    margin:0 0 10px;
+    line-height:1.05;
+    letter-spacing:-0.01em;
+  }
+  .hero h1 span{color:var(--green);}
+  .hero p{color:var(--muted);max-width:560px;margin:0 0 20px;font-size:15px;line-height:1.55;}
+  .hero-graph{width:100%;max-width:600px;display:block;}
+
+  /* NAV */
+  .tabs{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:14px;
+  }
+  .tab{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:0.02em;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--muted);
+    padding:9px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  .tab:hover{color:var(--text);border-color:#3a4550;}
+  .tab.active{
+    color:#fff;
+    background:var(--green);
+    border-color:var(--green);
+  }
+
+  .section{display:none;animation:fade .25s ease;}
+  .section.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .section-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:22px;
+    margin:0 0 4px;
+  }
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+
+  /* DIAGRAM PANEL */
+  .diagram-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:24px;
+  }
+  .diagram-panel svg{width:100%;height:auto;display:block;}
+  .diagram-caption{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    color:var(--muted);
+    text-align:center;
+    margin-top:10px;
+  }
+
+  /* CARDS (always visible) */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--green);
+    border-radius:12px;
+    padding:16px 18px;
+  }
+  .card .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--green);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:8px;
+  }
+  .card .q{
+    font-size:14.5px;
+    font-weight:600;
+    line-height:1.4;
+    margin-bottom:10px;
+  }
+  .card .a{
+    font-size:13px;
+    line-height:1.55;
+    color:#D6E2EE;
+    margin:0;
+    font-style:italic;
+    padding-top:10px;
+    border-top:1px solid var(--line);
+  }
+
+  /* COMMAND TABLE */
+  .table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .cmd-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .cmd-table th{
+    text-align:left;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    color:var(--muted);
+    letter-spacing:.06em;
+    padding:8px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .cmd-table td{
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+    vertical-align:top;
+  }
+  .cmd-table code{
+    font-family:'JetBrains Mono',monospace;
+    background:rgba(63,185,80,0.12);
+    color:var(--green);
+    padding:2px 7px;
+    border-radius:5px;
+    font-size:12.5px;
+    white-space:nowrap;
+  }
+  .cmd-table tr:last-child td{border-bottom:none;}
+
+  .badge-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+  .badge{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    padding:5px 11px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    color:var(--muted);
+  }
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:12px;
+    margin-top:40px;
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  @media(max-width:768px){
+    .wrap{padding:24px 14px 60px;}
+    .hero{padding:24px 18px;}
+    .hero p{font-size:14px;}
+    .diagram-panel{padding:16px;}
+    .grid{grid-template-columns:1fr;gap:12px;}
+    .section-title{font-size:19px;}
+  }
+  @media(max-width:480px){
+    .wrap{padding:18px 10px 50px;}
+    .hero{padding:20px 14px;border-radius:14px;}
+    .hero h1{font-size:26px;}
+    .hero-eyebrow{font-size:10.5px;}
+    .badge-row{gap:6px;}
+    .badge{font-size:10px;padding:4px 9px;}
+    .tabs{gap:5px;padding-bottom:10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab{padding:8px 12px;font-size:11.5px;flex:0 0 auto;}
+    .card{padding:14px 15px;}
+    .card .q{font-size:13.5px;}
+    .card .a{font-size:12.5px;}
+    .cmd-table th,.cmd-table td{padding:8px;font-size:12px;}
+    .cmd-table code{font-size:11px;padding:2px 5px;white-space:normal;}
+    .diagram-caption{font-size:10px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-eyebrow">// entry-level interview prep</div>
+    <h1>Linux, <span>Explained</span></h1>
+    <p>Every question laid out with its spoken-answer version, plus diagrams for the parts you have to visualize — file tree, permission bits, pipes, and process signals.</p>
+    <svg class="hero-graph" viewBox="0 0 600 110" xmlns="http://www.w3.org/2000/svg">
+      <text x="20" y="30" fill="#3FB950" font-family="JetBrains Mono" font-size="12">nadhil@server:~$</text>
+      <text x="180" y="30" fill="#E6EDF3" font-family="JetBrains Mono" font-size="12">uname -a</text>
+      <text x="20" y="55" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">Linux server 6.5.0-generic x86_64 GNU/Linux</text>
+      <text x="20" y="85" fill="#3FB950" font-family="JetBrains Mono" font-size="12">nadhil@server:~$</text>
+      <text x="180" y="85" fill="#E6EDF3" font-family="JetBrains Mono" font-size="12">ps aux | grep nginx</text>
+      <rect x="490" y="76" width="8" height="14" fill="#3FB950">
+        <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+      </rect>
+    </svg>
+  </div>
+
+  <div class="badge-row">
+    <span class="badge">50+ answers</span>
+    <span class="badge">10 topics</span>
+    <span class="badge">4 diagrams</span>
+    <span class="badge">real command examples</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="basics">Basics</button>
+    <button class="tab" data-tab="filesystem">File System</button>
+    <button class="tab" data-tab="permissions">Permissions</button>
+    <button class="tab" data-tab="processes">Processes</button>
+    <button class="tab" data-tab="networking">Networking</button>
+    <button class="tab" data-tab="packages">Packages</button>
+    <button class="tab" data-tab="logs">Logs & Pipes</button>
+    <button class="tab" data-tab="users">Users</button>
+    <button class="tab" data-tab="automation">Cron & Scripts</button>
+    <button class="tab" data-tab="common">Common Qs</button>
+  </div>
+
+  <!-- BASICS -->
+  <div class="section active" id="basics">
+    <h2 class="section-title">Basics</h2>
+    <p class="section-sub">What Linux is, and why every DevOps interview starts here.</p>
+    <div class="grid" id="basics-grid"></div>
+  </div>
+
+  <!-- FILE SYSTEM -->
+  <div class="section" id="filesystem">
+    <h2 class="section-title">The File System</h2>
+    <p class="section-sub">Everything in Linux is a file, and the tree starts from a single root.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="350" cy="30" r="18" fill="#3FB950"/>
+        <text x="350" y="35" text-anchor="middle" fill="#0D1117" font-family="JetBrains Mono" font-weight="700" font-size="14">/</text>
+        <text x="350" y="65" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="9">root</text>
+
+        <line x1="350" y1="48" x2="90" y2="110" stroke="#26303C" stroke-width="1.5"/>
+        <line x1="350" y1="48" x2="220" y2="110" stroke="#26303C" stroke-width="1.5"/>
+        <line x1="350" y1="48" x2="350" y2="110" stroke="#26303C" stroke-width="1.5"/>
+        <line x1="350" y1="48" x2="480" y2="110" stroke="#26303C" stroke-width="1.5"/>
+        <line x1="350" y1="48" x2="610" y2="110" stroke="#26303C" stroke-width="1.5"/>
+
+        <rect x="45" y="110" width="90" height="60" rx="8" fill="#141B24" stroke="#58A6FF"/>
+        <text x="90" y="132" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-weight="600" font-size="13">/home</text>
+        <text x="90" y="152" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">user files</text>
+
+        <rect x="175" y="110" width="90" height="60" rx="8" fill="#141B24" stroke="#D29922"/>
+        <text x="220" y="132" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-weight="600" font-size="13">/etc</text>
+        <text x="220" y="152" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">config files</text>
+
+        <rect x="305" y="110" width="90" height="60" rx="8" fill="#141B24" stroke="#BC8CFF"/>
+        <text x="350" y="132" text-anchor="middle" fill="#BC8CFF" font-family="JetBrains Mono" font-weight="600" font-size="13">/var</text>
+        <text x="350" y="152" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">logs, data</text>
+
+        <rect x="435" y="110" width="90" height="60" rx="8" fill="#141B24" stroke="#F05033"/>
+        <text x="480" y="132" text-anchor="middle" fill="#F05033" font-family="JetBrains Mono" font-weight="600" font-size="13">/bin</text>
+        <text x="480" y="152" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">programs</text>
+
+        <rect x="565" y="110" width="90" height="60" rx="8" fill="#141B24" stroke="#3FB950"/>
+        <text x="610" y="132" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-weight="600" font-size="13">/tmp</text>
+        <text x="610" y="152" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">temporary</text>
+
+        <line x1="90" y1="170" x2="90" y2="200" stroke="#26303C" stroke-width="1.5"/>
+        <rect x="30" y="200" width="120" height="35" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="90" y="222" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="11">/home/nadhil</text>
+
+        <line x1="350" y1="170" x2="350" y2="200" stroke="#26303C" stroke-width="1.5"/>
+        <rect x="290" y="200" width="120" height="35" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="350" y="222" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="11">/var/log</text>
+      </svg>
+      <div class="diagram-caption">The Linux tree starts at / (root) and branches into standard folders — every distro shares this structure</div>
+    </div>
+    <div class="grid" id="filesystem-grid"></div>
+  </div>
+
+  <!-- PERMISSIONS -->
+  <div class="section" id="permissions">
+    <h2 class="section-title">Permissions</h2>
+    <p class="section-sub">rwx for owner, group, and everyone else — one of the top interview topics.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg">
+        <!-- Full ls -l output -->
+        <text x="20" y="35" fill="#E6EDF3" font-family="JetBrains Mono" font-size="18">-</text>
+        <text x="35" y="35" fill="#3FB950" font-family="JetBrains Mono" font-size="18" font-weight="700">rwx</text>
+        <text x="80" y="35" fill="#58A6FF" font-family="JetBrains Mono" font-size="18" font-weight="700">r-x</text>
+        <text x="120" y="35" fill="#D29922" font-family="JetBrains Mono" font-size="18" font-weight="700">r--</text>
+        <text x="175" y="35" fill="#8B98A5" font-family="JetBrains Mono" font-size="14">nadhil dev</text>
+        <text x="285" y="35" fill="#8B98A5" font-family="JetBrains Mono" font-size="14">4096 Jul 19 06:24</text>
+        <text x="450" y="35" fill="#E6EDF3" font-family="JetBrains Mono" font-size="14">deploy.sh</text>
+
+        <!-- annotations -->
+        <line x1="55" y1="45" x2="55" y2="85" stroke="#3FB950" stroke-width="1"/>
+        <text x="55" y="105" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="11">owner</text>
+        <text x="55" y="120" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="10">7 (rwx)</text>
+
+        <line x1="97" y1="45" x2="97" y2="85" stroke="#58A6FF" stroke-width="1"/>
+        <text x="97" y="105" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-size="11">group</text>
+        <text x="97" y="120" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="10">5 (r-x)</text>
+
+        <line x1="135" y1="45" x2="135" y2="85" stroke="#D29922" stroke-width="1"/>
+        <text x="135" y="105" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="11">others</text>
+        <text x="135" y="120" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="10">4 (r--)</text>
+
+        <!-- Numeric explanation -->
+        <rect x="30" y="150" width="640" height="90" rx="10" fill="#141B24" stroke="#26303C"/>
+        <text x="50" y="175" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">chmod 754 deploy.sh  →  each digit sets one group</text>
+
+        <text x="50" y="205" fill="#3FB950" font-family="JetBrains Mono" font-size="14">r=4</text>
+        <text x="100" y="205" fill="#58A6FF" font-family="JetBrains Mono" font-size="14">w=2</text>
+        <text x="150" y="205" fill="#D29922" font-family="JetBrains Mono" font-size="14">x=1</text>
+        <text x="205" y="205" fill="#E6EDF3" font-family="JetBrains Mono" font-size="14">→ add them up</text>
+
+        <text x="50" y="228" fill="#E6EDF3" font-family="JetBrains Mono" font-size="13">7 = read + write + execute · 5 = read + execute · 4 = read only</text>
+      </svg>
+      <div class="diagram-caption">The 9-character permission string splits into owner / group / others — each is a 3-bit rwx block</div>
+    </div>
+    <div class="grid" id="permissions-grid"></div>
+  </div>
+
+  <!-- PROCESSES -->
+  <div class="section" id="processes">
+    <h2 class="section-title">Processes & System</h2>
+    <p class="section-sub">Every running program has a PID — you'll be asked how to find and stop them.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg">
+        <!-- Terminal-style output -->
+        <rect x="20" y="20" width="660" height="180" rx="10" fill="#1B2430" stroke="#26303C"/>
+        <text x="35" y="45" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">$ ps aux | head -6</text>
+
+        <text x="35" y="70" fill="#58A6FF" font-family="JetBrains Mono" font-size="11" font-weight="600">USER      PID  %CPU  %MEM  COMMAND</text>
+        <line x1="35" y1="78" x2="500" y2="78" stroke="#26303C"/>
+
+        <text x="35" y="95" fill="#E6EDF3" font-family="JetBrains Mono" font-size="11">root        1   0.0   0.1  /sbin/init</text>
+        <text x="35" y="115" fill="#E6EDF3" font-family="JetBrains Mono" font-size="11">root      412   0.1   0.4  /usr/sbin/sshd</text>
+        <text x="35" y="135" fill="#E6EDF3" font-family="JetBrains Mono" font-size="11">nadhil   1284   2.3   1.2  /usr/bin/node app.js</text>
+        <text x="35" y="155" fill="#F05033" font-family="JetBrains Mono" font-size="11" font-weight="700">nadhil   1519  84.5   6.8  python train.py</text>
+        <text x="500" y="155" fill="#F05033" font-family="JetBrains Mono" font-size="10">← runaway!</text>
+
+        <text x="35" y="185" fill="#3FB950" font-family="JetBrains Mono" font-size="11">$ kill -9 1519</text>
+      </svg>
+      <div class="diagram-caption">Find the guilty process with ps aux, then stop it with kill -9 &lt;PID&gt;</div>
+    </div>
+    <div class="grid" id="processes-grid"></div>
+  </div>
+
+  <!-- NETWORKING -->
+  <div class="section" id="networking">
+    <h2 class="section-title">Networking</h2>
+    <p class="section-sub">SSH, curl, ports, IPs — the everyday sysadmin toolkit.</p>
+    <div class="grid" id="networking-grid"></div>
+  </div>
+
+  <!-- PACKAGES -->
+  <div class="section" id="packages">
+    <h2 class="section-title">Package Management</h2>
+    <p class="section-sub">Different distros, different commands — same idea.</p>
+    <div class="diagram-panel">
+      <div class="table-scroll">
+      <table class="cmd-table">
+        <tr><th>Action</th><th>Debian / Ubuntu</th><th>Red Hat / CentOS</th></tr>
+        <tr><td>Update package list</td><td><code>apt update</code></td><td><code>yum check-update</code></td></tr>
+        <tr><td>Install a package</td><td><code>apt install nginx</code></td><td><code>yum install nginx</code></td></tr>
+        <tr><td>Remove a package</td><td><code>apt remove nginx</code></td><td><code>yum remove nginx</code></td></tr>
+        <tr><td>Upgrade everything</td><td><code>apt upgrade</code></td><td><code>yum update</code></td></tr>
+      </table>
+      </div>
+      <div class="diagram-caption">Same task, different manager — mention which distro you've used in interviews</div>
+    </div>
+    <div class="grid" id="packages-grid"></div>
+  </div>
+
+  <!-- LOGS & PIPES -->
+  <div class="section" id="logs">
+    <h2 class="section-title">Logs & Pipes</h2>
+    <p class="section-sub">Chain small commands together to solve real problems.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="60" width="150" height="60" rx="10" fill="#141B24" stroke="#58A6FF"/>
+        <text x="95" y="85" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-weight="600" font-size="13">cat access.log</text>
+        <text x="95" y="103" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">read the file</text>
+
+        <text x="185" y="95" fill="#F05033" font-family="JetBrains Mono" font-size="22">|</text>
+
+        <rect x="210" y="60" width="180" height="60" rx="10" fill="#141B24" stroke="#D29922"/>
+        <text x="300" y="85" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-weight="600" font-size="13">grep "500"</text>
+        <text x="300" y="103" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">keep server errors</text>
+
+        <text x="405" y="95" fill="#F05033" font-family="JetBrains Mono" font-size="22">|</text>
+
+        <rect x="430" y="60" width="150" height="60" rx="10" fill="#141B24" stroke="#BC8CFF"/>
+        <text x="505" y="85" text-anchor="middle" fill="#BC8CFF" font-family="JetBrains Mono" font-weight="600" font-size="13">wc -l</text>
+        <text x="505" y="103" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">count lines</text>
+
+        <text x="600" y="95" fill="#3FB950" font-family="JetBrains Mono" font-size="18">→ 42</text>
+
+        <text x="350" y="35" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-size="14" font-weight="600">"How many 500 errors today?"</text>
+        <text x="350" y="160" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">Each | passes the output of one command as input to the next</text>
+      </svg>
+      <div class="diagram-caption">A pipeline solves a real question by chaining tiny tools together</div>
+    </div>
+    <div class="grid" id="logs-grid"></div>
+  </div>
+
+  <!-- USERS -->
+  <div class="section" id="users">
+    <h2 class="section-title">Users & Groups</h2>
+    <p class="section-sub">Who can do what, and how to promote a new user.</p>
+    <div class="grid" id="users-grid"></div>
+  </div>
+
+  <!-- AUTOMATION -->
+  <div class="section" id="automation">
+    <h2 class="section-title">Cron & Shell Scripts</h2>
+    <p class="section-sub">The two ways sysadmins automate anything on Linux.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="30" width="640" height="60" rx="10" fill="#1B2430" stroke="#26303C"/>
+        <text x="60" y="55" fill="#3FB950" font-family="JetBrains Mono" font-weight="700" font-size="18">0</text>
+        <text x="130" y="55" fill="#58A6FF" font-family="JetBrains Mono" font-weight="700" font-size="18">2</text>
+        <text x="200" y="55" fill="#D29922" font-family="JetBrains Mono" font-weight="700" font-size="18">*</text>
+        <text x="270" y="55" fill="#BC8CFF" font-family="JetBrains Mono" font-weight="700" font-size="18">*</text>
+        <text x="340" y="55" fill="#F05033" font-family="JetBrains Mono" font-weight="700" font-size="18">*</text>
+        <text x="410" y="55" fill="#E6EDF3" font-family="JetBrains Mono" font-size="14">/home/nadhil/backup.sh</text>
+
+        <text x="65" y="80" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="10">min</text>
+        <text x="135" y="80" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-size="10">hour</text>
+        <text x="205" y="80" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="10">day</text>
+        <text x="275" y="80" text-anchor="middle" fill="#BC8CFF" font-family="JetBrains Mono" font-size="10">month</text>
+        <text x="345" y="80" text-anchor="middle" fill="#F05033" font-family="JetBrains Mono" font-size="10">weekday</text>
+
+        <text x="350" y="130" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-size="14" font-weight="600">"Every day at 2:00 AM, run the backup script"</text>
+        <text x="350" y="155" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="11">Edit with crontab -e</text>
+      </svg>
+      <div class="diagram-caption">A cron entry has 5 time fields + the command — remember the order min hour day month weekday</div>
+    </div>
+    <div class="grid" id="automation-grid"></div>
+  </div>
+
+  <!-- COMMON -->
+  <div class="section" id="common">
+    <h2 class="section-title">Common Interview Questions</h2>
+    <p class="section-sub">The high-frequency ones — practice these out loud.</p>
+    <div class="grid" id="common-grid"></div>
+  </div>
+
+  <footer>tap a tab above to jump between topics</footer>
+</div>
+
+<script>
+const data = {
+  basics: [
+    ["Basics","What is Linux?","Linux is an open-source operating system based on the Unix design. It runs on almost every server, most cloud infrastructure, Android phones, and many devices, because it's free, stable, and highly customizable."],
+    ["Basics","Why is Linux used so much in DevOps?","Because most servers, cloud services, and containers run on Linux. It's lightweight, stable, free, and everything can be automated using the command line."],
+    ["Basics","What is a Linux distribution?","A distribution is a version of Linux packaged with specific tools and settings. Common ones are Ubuntu, CentOS, Red Hat, Debian, and Amazon Linux — the core is the same, but each one is tuned for different use cases."],
+    ["Basics","Difference between Linux and Unix?","Unix is the original operating system created in the 1970s, and it's mostly commercial. Linux is a free, open-source system inspired by Unix — so they behave very similarly, but Linux is free and community-driven."],
+    ["Basics","What is the kernel?","The kernel is the core of the operating system. It manages the hardware, memory, and processes, and lets applications talk to the machine."],
+    ["Basics","What is the shell?","The shell is the command-line interpreter — it's what takes the commands I type and tells the kernel to run them. Bash is the most common shell on Linux."]
+  ],
+  filesystem: [
+    ["File System","What is the Linux file system structure?","Everything in Linux is a file, and it all starts from the root directory, which is just a forward slash. Under that, you have folders like /home for user files, /etc for configuration files, /var for logs, /bin for binaries, and /tmp for temporary files."],
+    ["File System","What does pwd do?","It stands for 'print working directory' — it shows me the full path of the folder I'm currently in."],
+    ["File System","What does ls do?","It lists the files and folders in the current directory. I use ls -l for a detailed list, and ls -a to include hidden files that start with a dot."],
+    ["File System","What does cd do?","It stands for 'change directory' — it moves me into a different folder. cd .. goes up one level, and cd ~ takes me to my home directory."],
+    ["File System","How do you create and delete files or folders?","I use touch to create an empty file, mkdir to create a folder, rm to delete a file, and rm -r to delete a folder and everything inside it."],
+    ["File System","How do you copy and move files?","cp copies a file from one place to another, and mv either moves it or renames it, depending on how I use it."],
+    ["File System","What does cat do?","It shows the contents of a file directly in the terminal. It's short for 'concatenate,' because it can also join multiple files together."],
+    ["File System","Difference between more, less, and cat?","cat shows the whole file at once, more shows it one screen at a time, and less is like more but lets me scroll up and down freely — I use less the most."]
+  ],
+  permissions: [
+    ["Permissions","How do Linux permissions work?","Every file has three permission types — read, write, and execute — and they apply to three groups: the owner, the group, and everyone else. So when I run ls -l, I see something like rwxr-xr-- which tells me who can do what."],
+    ["Permissions","What does chmod do?","It changes the permissions of a file or folder. I can use numbers like chmod 755, where 7 is full permission for the owner, and 5 is read and execute for others."],
+    ["Permissions","What does chown do?","It changes the owner of a file. For example, chown user:group filename changes both the user and group ownership."],
+    ["Permissions","What does sudo do?","sudo lets me run a command as the root user, which has full permissions. I use it when I need to install software or change system files."],
+    ["Permissions","Difference between root and a regular user?","Root is the superuser — it can do anything on the system, including deleting critical files. A regular user has limited permissions to protect the system from accidental damage."]
+  ],
+  processes: [
+    ["Processes","What is a process in Linux?","A process is any running program. Every process has a unique ID called a PID, which I use to manage or stop it."],
+    ["Processes","How do you see running processes?","I use ps to see processes owned by me, ps aux to see everything running on the system, and top or htop to see them updated in real time with CPU and memory usage."],
+    ["Processes","How do you kill a process?","I use kill followed by the PID to stop it gracefully, or kill -9 followed by the PID to force it to stop immediately if it's not responding."],
+    ["Processes","What does top do?","top shows me all the running processes updated in real time, along with how much CPU and memory each one is using — really useful for finding what's slowing down a server."],
+    ["Processes","What does df do?","It shows how much disk space is used and available on each mounted drive. I use df -h to see it in a human-readable format like GB and MB."],
+    ["Processes","What does du do?","It shows how much space a folder or file is using. I usually run du -sh to get a total for a folder in a readable format."],
+    ["Processes","What does free do?","It shows how much RAM is being used and how much is free. I use free -h for a readable output."],
+    ["Processes","What does uptime tell you?","It shows how long the system has been running, how many users are logged in, and the average system load."]
+  ],
+  networking: [
+    ["Networking","How do you check your IP address?","I use ip a on newer systems, or ifconfig on older ones — both show me the network interfaces and their IP addresses."],
+    ["Networking","How do you test if a server is reachable?","I use ping followed by the IP or domain name. If I get replies, the server is reachable."],
+    ["Networking","What does netstat do?","It shows active network connections and listening ports on the machine. On newer systems, ss is used instead — it does the same thing but faster."],
+    ["Networking","How do you check which ports are open?","I use ss -tuln or netstat -tuln to list all listening ports on the server."],
+    ["Networking","What does curl do?","curl lets me send HTTP requests from the terminal. I use it to test APIs, download files, or check if a web server is responding."],
+    ["Networking","Difference between curl and wget?","Both download things from the web. wget is mostly for downloading files, while curl is more flexible and works well for testing APIs too."],
+    ["Networking","How do you SSH into a remote server?","I use ssh username@server_ip. It gives me a secure remote terminal on that machine, and I usually use an SSH key instead of a password for security."]
+  ],
+  packages: [
+    ["Packages","How do you install software on Linux?","It depends on the distribution. On Ubuntu or Debian, I use apt — for example, sudo apt install nginx. On CentOS or Red Hat, I use yum or dnf."],
+    ["Packages","Difference between apt and yum?","They're both package managers, but they work on different distros. apt is used on Debian and Ubuntu, and yum or dnf is used on Red Hat and CentOS."],
+    ["Packages","How do you update all packages?","On Ubuntu, I run sudo apt update to refresh the package list, then sudo apt upgrade to install the updates. On Red Hat, it's sudo yum update."]
+  ],
+  logs: [
+    ["Logs & Pipes","Where are Linux logs stored?","Most system logs are in the /var/log directory. For example, /var/log/syslog for general system logs and /var/log/auth.log for login and authentication events."],
+    ["Logs & Pipes","How do you view logs in real time?","I use tail -f followed by the log file name. It shows me new log lines as they come in, which is really useful when debugging live issues."],
+    ["Logs & Pipes","What does grep do?","grep searches for a specific word or pattern inside a file. For example, grep 'error' logfile.txt shows me every line containing the word 'error'."],
+    ["Logs & Pipes","How do you combine commands?","I use the pipe symbol, which is the vertical bar, to send the output of one command as the input of another. For example, cat log.txt | grep 'error' shows only error lines from the file."],
+    ["Logs & Pipes","What does the > symbol do?","It redirects output to a file. For example, ls > files.txt saves the output of ls into files.txt, overwriting whatever was there before. Using >> appends instead."]
+  ],
+  users: [
+    ["Users","How do you add a new user?","I use sudo adduser followed by the username. To give them admin rights, I add them to the sudo group using usermod -aG sudo username."],
+    ["Users","How do you switch to another user?","I use su followed by the username, or su - for a fresh login shell as that user."],
+    ["Users","What is /etc/passwd?","It's a file that stores information about every user on the system, like their username, home directory, and default shell — but not the passwords themselves."]
+  ],
+  automation: [
+    ["Automation","What is cron?","cron is a built-in Linux scheduler that runs commands or scripts automatically at set times. I edit its schedule using crontab -e."],
+    ["Automation","How do you write a cron job?","A cron job has five time fields — minute, hour, day, month, and day of week — followed by the command. For example, 0 2 * * * means every day at 2 AM."],
+    ["Automation","What is a shell script?","It's a text file containing a list of commands that run one after another. I write it once and reuse it to automate tasks — like backups, deployments, or health checks."],
+    ["Automation","How do you make a script executable?","I use chmod +x followed by the script name, then run it with ./scriptname.sh."]
+  ],
+  common: [
+    ["Common Qs","What are your favorite Linux commands?","For daily work, I rely on ls, cd, cat, grep, tail, ps, top, and df. For managing servers, I use ssh, systemctl, and journalctl a lot."],
+    ["Common Qs","How do you find a file on Linux?","I use find to search live — for example, find / -name filename — or locate for a faster search using an indexed database."],
+    ["Common Qs","How do you check system performance?","I use top or htop for CPU and memory, df -h for disk usage, and free -h for RAM. For a quick overview, uptime shows the system load."],
+    ["Common Qs","Difference between soft link and hard link?","A hard link points directly to the file's data on disk, so if I delete the original, the link still works. A soft link, or symlink, is like a shortcut — if the original file is deleted, the link becomes broken."],
+    ["Common Qs","How do you check the OS and kernel version?","I run uname -a for kernel info, and cat /etc/os-release to see the exact Linux distribution and version."]
+  ]
+};
+
+function buildGrid(id, items){
+  const grid = document.getElementById(id);
+  items.forEach(([tag,q,a])=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `
+      <div class="tag">${tag}</div>
+      <div class="q">${q}</div>
+      <p class="a">"${a}"</p>`;
+    grid.appendChild(card);
+  });
+}
+Object.keys(data).forEach(k => buildGrid(k+'-grid', data[k]));
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
