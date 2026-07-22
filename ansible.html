@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ansible, Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;--panel:#141B24;--line:#26303C;
+    --ans:#EE0000;--blue:#58A6FF;--green:#3FB950;--amber:#D29922;--purple:#BC8CFF;
+    --text:#E6EDF3;--muted:#8B98A5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(circle at 15% 0%, rgba(238,0,0,0.10), transparent 45%),radial-gradient(circle at 90% 10%, rgba(88,166,255,0.08), transparent 40%),var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+  .hero{padding:34px 30px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg, rgba(238,0,0,0.10), rgba(20,27,36,0.4));margin-bottom:28px;}
+  .hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;color:#FF5C5C;text-transform:uppercase;margin-bottom:10px;}
+  .hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,5vw,46px);margin:0 0 10px;line-height:1.05;letter-spacing:-.01em;}
+  .hero h1 span{color:#FF5C5C;}
+  .hero p{color:var(--muted);max-width:580px;margin:0 0 20px;font-size:15px;line-height:1.55;}
+  .hero-graph{width:100%;max-width:600px;display:block;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:14px;}
+  .tab{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+  .tab:hover{color:var(--text);border-color:#3a4550;}
+  .tab.active{color:#fff;background:#C81E1E;border-color:#C81E1E;font-weight:600;}
+  .section{display:none;animation:fade .25s ease;}
+  .section.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0 0 4px;}
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+  .diagram-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:24px;}
+  .diagram-panel svg{width:100%;height:auto;display:block;}
+  .diagram-caption{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid #C81E1E;border-radius:12px;padding:16px 18px;}
+  .card .tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:#FF5C5C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+  .card .q{font-size:14.5px;font-weight:600;line-height:1.4;margin-bottom:10px;}
+  .card .a{font-size:13px;line-height:1.55;color:#D6E2EE;margin:0;font-style:italic;padding-top:10px;border-top:1px solid var(--line);}
+  .table-scroll{width:100%;overflow-x:auto;}
+  .cmd-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .cmd-table th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.06em;padding:8px 12px;border-bottom:1px solid var(--line);}
+  .cmd-table td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  .cmd-table code{font-family:'JetBrains Mono',monospace;background:rgba(238,0,0,0.14);color:#FF5C5C;padding:2px 7px;border-radius:5px;font-size:12.5px;white-space:nowrap;}
+  .cmd-table tr:last-child td{border-bottom:none;}
+  .script{background:#0A1119;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+  .script-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:#131C27;flex-wrap:wrap;gap:4px;}
+  .script-name{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#FF5C5C;font-weight:600;}
+  .script-purpose{font-size:11.5px;color:var(--muted);}
+  .script pre{margin:0;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.65;color:#D6E2EE;overflow-x:auto;white-space:pre;}
+  .script pre .cmt{color:#6C7A85;font-style:italic;}
+  .script pre .kw{color:#BC8CFF;}
+  .script pre .str{color:#3FB950;}
+  .script pre .fn{color:#58A6FF;}
+  .script-desc{padding:12px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);line-height:1.55;background:#0F1620;}
+  .badge-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);color:var(--muted);}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:40px;font-family:'JetBrains Mono',monospace;}
+  @media(max-width:768px){.wrap{padding:24px 14px 60px;}.hero{padding:24px 18px;}.hero p{font-size:14px;}.diagram-panel{padding:16px;}.grid{grid-template-columns:1fr;gap:12px;}.section-title{font-size:19px;}.script pre{font-size:11.5px;}}
+  @media(max-width:480px){.wrap{padding:18px 10px 50px;}.hero{padding:20px 14px;border-radius:14px;}.hero h1{font-size:26px;}.tabs{gap:5px;padding-bottom:10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;}.tabs::-webkit-scrollbar{display:none;}.tab{padding:8px 12px;font-size:11.5px;flex:0 0 auto;}.card{padding:14px 15px;}.card .q{font-size:13.5px;}.card .a{font-size:12.5px;}.cmd-table th,.cmd-table td{padding:8px;font-size:12px;}.script pre{font-size:11px;padding:12px 14px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-eyebrow">// entry-level interview prep</div>
+    <h1>Ansible, <span>Explained</span></h1>
+    <p>Configuring many servers at once, without SSHing into each one manually. Spoken answers plus a real playbook you could talk through.</p>
+    <svg class="hero-graph" viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg">
+      <text x="20" y="30" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">$ ansible-playbook site.yml</text>
+      <text x="20" y="55" fill="#3FB950" font-family="JetBrains Mono" font-size="12">PLAY RECAP *********</text>
+      <text x="20" y="75" fill="#FF5C5C" font-family="JetBrains Mono" font-size="12">web1  ok=5  changed=2  failed=0</text>
+    </svg>
+  </div>
+  <div class="badge-row"><span class="badge">30+ answers</span><span class="badge">real playbook</span><span class="badge">2 diagrams</span><span class="badge">interview-ready</span></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="basics">Basics</button>
+    <button class="tab" data-tab="inventory">Inventory & Modules</button>
+    <button class="tab" data-tab="playbooks">Playbooks</button>
+    <button class="tab" data-tab="concepts">Roles & Idempotency</button>
+    <button class="tab" data-tab="examples">Real Playbook</button>
+    <button class="tab" data-tab="cheat">Cheat Sheet</button>
+    <button class="tab" data-tab="common">Common Qs</button>
+  </div>
+
+  <div class="section active" id="basics">
+    <h2 class="section-title">Basics</h2>
+    <p class="section-sub">Why Ansible exists, and how it's different from Terraform.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 170" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="60" width="140" height="50" rx="8" fill="#141B24" stroke="#C81E1E"/>
+        <text x="100" y="90" text-anchor="middle" fill="#FF5C5C" font-family="JetBrains Mono" font-weight="600" font-size="12">control node</text>
+
+        <path d="M170,75 L230,40" stroke="#FF5C5C" stroke-width="1.5" marker-end="url(#a1)"/>
+        <path d="M170,85 L230,85" stroke="#FF5C5C" stroke-width="1.5" marker-end="url(#a1)"/>
+        <path d="M170,95 L230,130" stroke="#FF5C5C" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <rect x="240" y="20" width="130" height="40" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="305" y="45" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="10.5">web1 (SSH)</text>
+        <rect x="240" y="65" width="130" height="40" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="305" y="90" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="10.5">web2 (SSH)</text>
+        <rect x="240" y="110" width="130" height="40" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="305" y="135" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="10.5">db1 (SSH)</text>
+
+        <text x="530" y="75" fill="#8B98A5" font-family="Inter" font-size="11" text-anchor="middle">no agent installed</text>
+        <text x="530" y="95" fill="#8B98A5" font-family="Inter" font-size="11" text-anchor="middle">on any target — just SSH</text>
+
+        <defs><marker id="a1" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#FF5C5C"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">Ansible is agentless — it just needs SSH access to configure a machine</div>
+    </div>
+    <div class="grid" id="basics-grid"></div>
+  </div>
+
+  <div class="section" id="inventory">
+    <h2 class="section-title">Inventory & Modules</h2>
+    <p class="section-sub">Telling Ansible which servers exist, and what to do to them.</p>
+    <div class="grid" id="inventory-grid"></div>
+  </div>
+
+  <div class="section" id="playbooks">
+    <h2 class="section-title">Playbooks</h2>
+    <p class="section-sub">The YAML files that describe what should happen on each server.</p>
+    <div class="grid" id="playbooks-grid"></div>
+  </div>
+
+  <div class="section" id="concepts">
+    <h2 class="section-title">Roles & Idempotency</h2>
+    <p class="section-sub">Organizing playbooks, and the concept every Ansible interview asks about.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 130" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="30" width="180" height="70" rx="8" fill="#141B24" stroke="#D29922"/>
+        <text x="120" y="55" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="11">run #1</text>
+        <text x="120" y="75" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="10.5">nginx installed ✓</text>
+
+        <path d="M215,65 L260,65" stroke="#8B98A5" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <rect x="270" y="30" width="180" height="70" rx="8" fill="#141B24" stroke="#3FB950"/>
+        <text x="360" y="55" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="11">run #2 (same playbook)</text>
+        <text x="360" y="75" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="10.5">already installed → skip</text>
+
+        <text x="580" y="70" fill="#8B98A5" font-family="Inter" font-size="11" text-anchor="middle">no duplicate installs,</text>
+        <text x="580" y="88" fill="#8B98A5" font-family="Inter" font-size="11" text-anchor="middle">no errors from re-running</text>
+
+        <defs><marker id="a2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#8B98A5"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">Idempotency — running the same playbook twice gives the same safe result</div>
+    </div>
+    <div class="grid" id="concepts-grid"></div>
+  </div>
+
+  <div class="section" id="examples">
+    <h2 class="section-title">A Real Playbook</h2>
+    <p class="section-sub">Installs and starts nginx across a group of web servers.</p>
+    <div id="examples-list"></div>
+  </div>
+
+  <div class="section" id="cheat">
+    <h2 class="section-title">Cheat Sheet</h2>
+    <p class="section-sub">Commands worth having on the tip of your tongue.</p>
+    <div class="diagram-panel">
+      <div class="table-scroll">
+      <table class="cmd-table">
+        <tr><th>Command</th><th>What it does</th></tr>
+        <tr><td><code>ansible all -m ping</code></td><td>Check connectivity to all hosts in inventory</td></tr>
+        <tr><td><code>ansible-playbook site.yml</code></td><td>Run a playbook against the inventory</td></tr>
+        <tr><td><code>ansible-playbook site.yml --check</code></td><td>Dry run — show what would change, without changing anything</td></tr>
+        <tr><td><code>ansible-playbook site.yml -i hosts</code></td><td>Run using a specific inventory file</td></tr>
+        <tr><td><code>ansible-doc &lt;module&gt;</code></td><td>Show documentation for a specific module</td></tr>
+        <tr><td><code>ansible-galaxy install &lt;role&gt;</code></td><td>Install a shared role from Ansible Galaxy</td></tr>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="common">
+    <h2 class="section-title">Common Interview Questions</h2>
+    <p class="section-sub">Practice these out loud.</p>
+    <div class="grid" id="common-grid"></div>
+  </div>
+
+  <footer>tap a tab above to jump between topics</footer>
+</div>
+
+<script>
+const data = {
+  basics: [
+    ["Basics","What is Ansible?","Ansible is a configuration management tool — it automates installing software, changing settings, and configuring servers, using simple YAML files instead of manually SSHing into each machine."],
+    ["Basics","Why is Ansible described as 'agentless'?","Because it doesn't require installing any special software on the target servers — it just connects over SSH and runs commands directly, using Python already present on most Linux systems."],
+    ["Basics","Terraform vs Ansible?","Terraform provisions infrastructure — creating the actual servers, networks, and cloud resources. Ansible configures what's already running on those servers — installing packages, managing files, starting services. They're often used together."],
+    ["Basics","What is a control node?","It's the machine where Ansible itself is installed and run from — it connects out to the managed nodes over SSH to execute tasks."],
+    ["Basics","What is a managed node?","It's any server that Ansible configures. It doesn't need Ansible installed — just SSH access and Python available."]
+  ],
+  inventory: [
+    ["Inventory","What is an inventory file?","It's a file listing the servers Ansible manages, optionally grouped — like [webservers] or [databases] — so I can target specific groups of machines with a playbook."],
+    ["Inventory","What is a module in Ansible?","A module is a unit of work Ansible can perform, like installing a package (apt or yum), copying a file, or starting a service (systemd). Playbooks are built by combining modules."],
+    ["Inventory","How do you run a single ad-hoc command with Ansible?","I use the ansible command directly, like ansible webservers -m shell -a 'uptime', without writing a full playbook — useful for quick one-off checks."],
+    ["Inventory","What are host groups used for?","They let me target a subset of servers — like running a task only on [dbservers] and a different task only on [webservers] — instead of applying every task to every machine."]
+  ],
+  playbooks: [
+    ["Playbooks","What is a playbook?","A playbook is a YAML file that defines a set of tasks to run on specified hosts — it's the main way work gets organized and executed in Ansible."],
+    ["Playbooks","What is a task in a playbook?","A task is a single action, like installing a package or copying a config file, usually built around calling one module with specific parameters."],
+    ["Playbooks","What is a play?","A play is a section of a playbook that maps a set of tasks to a specific group of hosts, along with settings like which user to connect as."],
+    ["Playbooks","How do you run a playbook against only certain servers?","I use the --limit flag, like ansible-playbook site.yml --limit webservers, to restrict execution to a subset of the inventory."]
+  ],
+  concepts: [
+    ["Roles","What is idempotency, and why does it matter in Ansible?","It means running the same playbook multiple times produces the same result without unwanted side effects — like not reinstalling a package that's already there. It makes it safe to re-run playbooks anytime without worrying about breaking things."],
+    ["Roles","What is a role in Ansible?","A role is a structured, reusable way to organize related tasks, variables, files, and templates — like a self-contained 'install and configure nginx' package that can be reused across projects."],
+    ["Roles","What are Ansible variables used for?","They let me parameterize playbooks — like a version number or a config value — so the same playbook can be reused for different environments without editing the tasks themselves."],
+    ["Roles","What is a template in Ansible?","It's a file, usually with a .j2 (Jinja2) extension, that lets me generate config files dynamically by inserting variable values, instead of copying static files."]
+  ],
+  common: [
+    ["Common Qs","Have you used Ansible before?","At a learning level — I've written playbooks to install and configure software like nginx across multiple servers, and understand why idempotency matters for safely re-running them."],
+    ["Common Qs","How would you deploy an app update using Ansible?","I'd write a playbook that pulls the latest code, installs dependencies, and restarts the service — then run it against the target servers, so the same update applies identically everywhere."],
+    ["Common Qs","What happens if a task fails partway through a playbook run?","By default, Ansible stops running further tasks on that host and reports the failure, while continuing on other unaffected hosts, unless I've configured it to ignore that specific failure."],
+    ["Common Qs","How is Ansible different from a shell script doing the same thing?","A shell script isn't idempotent by default — running it twice might error out or duplicate actions. Ansible modules are designed to check current state first and only make changes when needed."],
+    ["Common Qs","Ansible vs Puppet or Chef?","They solve similar problems, but Puppet and Chef typically require installing an agent on every managed server and use their own DSLs. Ansible is agentless and uses plain YAML, which makes it faster to get started with."]
+  ]
+};
+function buildGrid(id, items){
+  const grid = document.getElementById(id);
+  items.forEach(([tag,q,a])=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `<div class="tag">${tag}</div><div class="q">${q}</div><p class="a">"${a}"</p>`;
+    grid.appendChild(card);
+  });
+}
+Object.keys(data).forEach(k => buildGrid(k+'-grid', data[k]));
+
+const examples = [{
+  name: "site.yml",
+  purpose: "Install and start nginx on all web servers",
+  code: `<span class="kw">---</span>
+- name: Configure web servers
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    - name: Copy nginx config
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify: restart nginx
+
+    - name: Ensure nginx is running
+      systemd:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: restart nginx
+      systemd:
+        name: nginx
+        state: restarted`,
+  desc: "Talk through it: \"This targets the webservers group, installs nginx using the apt module, pushes a templated config file, and makes sure the service is running and enabled on boot. The handler only restarts nginx if the config actually changed — that's the idempotent, notify-based pattern.\""
+}];
+const list = document.getElementById('examples-list');
+examples.forEach(s => {
+  const el = document.createElement('div');
+  el.className='script';
+  el.innerHTML = `<div class="script-head"><div class="script-name">${s.name}</div><div class="script-purpose">${s.purpose}</div></div><pre>${s.code}</pre><div class="script-desc">${s.desc}</div>`;
+  list.appendChild(el);
+});
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
