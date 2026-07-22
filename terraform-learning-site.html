@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Terraform, Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;--panel:#141B24;--line:#26303C;
+    --tf:#844FBA;--blue:#58A6FF;--green:#3FB950;--amber:#D29922;--orange:#F05033;
+    --text:#E6EDF3;--muted:#8B98A5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(circle at 15% 0%, rgba(132,79,186,0.14), transparent 45%),radial-gradient(circle at 90% 10%, rgba(88,166,255,0.08), transparent 40%),var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+  .hero{padding:34px 30px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg, rgba(132,79,186,0.12), rgba(20,27,36,0.4));margin-bottom:28px;}
+  .hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--tf);text-transform:uppercase;margin-bottom:10px;}
+  .hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,5vw,46px);margin:0 0 10px;line-height:1.05;letter-spacing:-.01em;}
+  .hero h1 span{color:var(--tf);}
+  .hero p{color:var(--muted);max-width:580px;margin:0 0 20px;font-size:15px;line-height:1.55;}
+  .hero-graph{width:100%;max-width:600px;display:block;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:14px;}
+  .tab{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+  .tab:hover{color:var(--text);border-color:#3a4550;}
+  .tab.active{color:#fff;background:var(--tf);border-color:var(--tf);font-weight:600;}
+  .section{display:none;animation:fade .25s ease;}
+  .section.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0 0 4px;}
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+  .diagram-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:24px;}
+  .diagram-panel svg{width:100%;height:auto;display:block;}
+  .diagram-caption{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--tf);border-radius:12px;padding:16px 18px;}
+  .card .tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tf);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+  .card .q{font-size:14.5px;font-weight:600;line-height:1.4;margin-bottom:10px;}
+  .card .a{font-size:13px;line-height:1.55;color:#D6E2EE;margin:0;font-style:italic;padding-top:10px;border-top:1px solid var(--line);}
+  .table-scroll{width:100%;overflow-x:auto;}
+  .cmd-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .cmd-table th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.06em;padding:8px 12px;border-bottom:1px solid var(--line);}
+  .cmd-table td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  .cmd-table code{font-family:'JetBrains Mono',monospace;background:rgba(132,79,186,0.16);color:#C9A6E6;padding:2px 7px;border-radius:5px;font-size:12.5px;white-space:nowrap;}
+  .cmd-table tr:last-child td{border-bottom:none;}
+  .script{background:#0A1119;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+  .script-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:#131C27;flex-wrap:wrap;gap:4px;}
+  .script-name{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#C9A6E6;font-weight:600;}
+  .script-purpose{font-size:11.5px;color:var(--muted);}
+  .script pre{margin:0;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.65;color:#D6E2EE;overflow-x:auto;white-space:pre;}
+  .script pre .cmt{color:#6C7A85;font-style:italic;}
+  .script pre .kw{color:#C9A6E6;}
+  .script pre .str{color:#3FB950;}
+  .script pre .fn{color:#58A6FF;}
+  .script-desc{padding:12px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);line-height:1.55;background:#0F1620;}
+  .badge-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);color:var(--muted);}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:40px;font-family:'JetBrains Mono',monospace;}
+  @media(max-width:768px){.wrap{padding:24px 14px 60px;}.hero{padding:24px 18px;}.hero p{font-size:14px;}.diagram-panel{padding:16px;}.grid{grid-template-columns:1fr;gap:12px;}.section-title{font-size:19px;}.script pre{font-size:11.5px;}}
+  @media(max-width:480px){.wrap{padding:18px 10px 50px;}.hero{padding:20px 14px;border-radius:14px;}.hero h1{font-size:26px;}.tabs{gap:5px;padding-bottom:10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;}.tabs::-webkit-scrollbar{display:none;}.tab{padding:8px 12px;font-size:11.5px;flex:0 0 auto;}.card{padding:14px 15px;}.card .q{font-size:13.5px;}.card .a{font-size:12.5px;}.cmd-table th,.cmd-table td{padding:8px;font-size:12px;}.script pre{font-size:11px;padding:12px 14px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-eyebrow">// entry-level interview prep</div>
+    <h1>Terraform, <span>Explained</span></h1>
+    <p>Writing code that builds your cloud infrastructure instead of clicking around a console. Spoken answers plus a real Terraform file for launching a server.</p>
+    <svg class="hero-graph" viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg">
+      <text x="20" y="30" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">$ terraform apply</text>
+      <text x="20" y="55" fill="#3FB950" font-family="JetBrains Mono" font-size="12">+ aws_instance.web will be created</text>
+      <text x="20" y="75" fill="#C9A6E6" font-family="JetBrains Mono" font-size="12">Plan: 1 to add, 0 to change, 0 to destroy</text>
+    </svg>
+  </div>
+  <div class="badge-row"><span class="badge">30+ answers</span><span class="badge">real .tf file</span><span class="badge">2 diagrams</span><span class="badge">interview-ready</span></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="basics">Basics</button>
+    <button class="tab" data-tab="workflow">Core Workflow</button>
+    <button class="tab" data-tab="state">State</button>
+    <button class="tab" data-tab="concepts">Variables & Modules</button>
+    <button class="tab" data-tab="examples">Real Config</button>
+    <button class="tab" data-tab="cheat">Cheat Sheet</button>
+    <button class="tab" data-tab="common">Common Qs</button>
+  </div>
+
+  <div class="section active" id="basics">
+    <h2 class="section-title">Basics</h2>
+    <p class="section-sub">What "Infrastructure as Code" actually means in practice.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 170" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="45" width="220" height="90" rx="10" fill="#141B24" stroke="#844FBA"/>
+        <text x="140" y="70" text-anchor="middle" fill="#C9A6E6" font-family="JetBrains Mono" font-weight="600" font-size="12">main.tf</text>
+        <text x="140" y="90" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">describes desired state</text>
+        <text x="140" y="108" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">"I want 1 EC2 instance"</text>
+
+        <path d="M255,90 L305,90" stroke="#844FBA" stroke-width="2" marker-end="url(#tf1)"/>
+        <text x="280" y="80" text-anchor="middle" fill="#844FBA" font-family="JetBrains Mono" font-size="10">terraform apply</text>
+
+        <rect x="315" y="45" width="180" height="90" rx="10" fill="#141B24" stroke="#58A6FF"/>
+        <text x="405" y="75" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-weight="600" font-size="12">Terraform</text>
+        <text x="405" y="95" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">compares to reality,</text>
+        <text x="405" y="112" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">makes the API calls</text>
+
+        <path d="M495,90 L540,90" stroke="#844FBA" stroke-width="2" marker-end="url(#tf1)"/>
+
+        <rect x="550" y="45" width="120" height="90" rx="10" fill="#0F3A5C" stroke="#3FB950"/>
+        <text x="610" y="80" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-weight="600" font-size="12">AWS</text>
+        <text x="610" y="100" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">EC2 instance ✓</text>
+
+        <defs><marker id="tf1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#844FBA"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">I describe what I want in code, Terraform figures out how to make the cloud match it</div>
+    </div>
+    <div class="grid" id="basics-grid"></div>
+  </div>
+
+  <div class="section" id="workflow">
+    <h2 class="section-title">Core Workflow</h2>
+    <p class="section-sub">init → plan → apply — the three commands you'll always use.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 140" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="40" width="150" height="55" rx="8" fill="#141B24" stroke="#58A6FF"/>
+        <text x="105" y="72" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-weight="600" font-size="13">terraform init</text>
+        <path d="M180,67 L230,67" stroke="#844FBA" stroke-width="2" marker-end="url(#tf2)"/>
+
+        <rect x="240" y="40" width="150" height="55" rx="8" fill="#141B24" stroke="#D29922"/>
+        <text x="315" y="72" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-weight="600" font-size="13">terraform plan</text>
+        <path d="M390,67 L440,67" stroke="#844FBA" stroke-width="2" marker-end="url(#tf2)"/>
+
+        <rect x="450" y="40" width="150" height="55" rx="8" fill="#141B24" stroke="#3FB950"/>
+        <text x="525" y="72" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-weight="600" font-size="13">terraform apply</text>
+
+        <text x="105" y="120" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="9.5">downloads providers</text>
+        <text x="315" y="120" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="9.5">shows what will change</text>
+        <text x="525" y="120" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="9.5">actually makes the changes</text>
+
+        <defs><marker id="tf2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#844FBA"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">plan is your safety net — always review it before apply</div>
+    </div>
+    <div class="grid" id="workflow-grid"></div>
+  </div>
+
+  <div class="section" id="state">
+    <h2 class="section-title">State</h2>
+    <p class="section-sub">How Terraform remembers what it already built.</p>
+    <div class="grid" id="state-grid"></div>
+  </div>
+
+  <div class="section" id="concepts">
+    <h2 class="section-title">Variables & Modules</h2>
+    <p class="section-sub">Making configs reusable instead of copy-pasted.</p>
+    <div class="grid" id="concepts-grid"></div>
+  </div>
+
+  <div class="section" id="examples">
+    <h2 class="section-title">A Real Config</h2>
+    <p class="section-sub">A Terraform file that launches an EC2 instance — worth memorizing the shape of.</p>
+    <div id="examples-list"></div>
+  </div>
+
+  <div class="section" id="cheat">
+    <h2 class="section-title">Cheat Sheet</h2>
+    <p class="section-sub">Commands worth having on the tip of your tongue.</p>
+    <div class="diagram-panel">
+      <div class="table-scroll">
+      <table class="cmd-table">
+        <tr><th>Command</th><th>What it does</th></tr>
+        <tr><td><code>terraform init</code></td><td>Downloads providers, sets up the working directory</td></tr>
+        <tr><td><code>terraform plan</code></td><td>Shows what changes would be made, without applying them</td></tr>
+        <tr><td><code>terraform apply</code></td><td>Applies the changes to actually create/update infrastructure</td></tr>
+        <tr><td><code>terraform destroy</code></td><td>Tears down everything Terraform created</td></tr>
+        <tr><td><code>terraform fmt</code></td><td>Auto-formats .tf files to standard style</td></tr>
+        <tr><td><code>terraform validate</code></td><td>Checks the config syntax without contacting the cloud provider</td></tr>
+        <tr><td><code>terraform state list</code></td><td>Lists all resources currently tracked in state</td></tr>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="common">
+    <h2 class="section-title">Common Interview Questions</h2>
+    <p class="section-sub">Practice these out loud.</p>
+    <div class="grid" id="common-grid"></div>
+  </div>
+
+  <footer>tap a tab above to jump between topics</footer>
+</div>
+
+<script>
+const data = {
+  basics: [
+    ["Basics","What is Terraform?","Terraform is an Infrastructure as Code tool — I write configuration files describing the cloud resources I want, like servers or networks, and Terraform creates and manages them automatically."],
+    ["Basics","Why use Terraform instead of clicking through the AWS console?","Because clicking through a console isn't repeatable, isn't version-controlled, and is easy to get wrong or forget. Terraform config lives in Git, can be reviewed, and produces the exact same infrastructure every time it's run."],
+    ["Basics","What does 'declarative' mean in Terraform?","It means I describe the end state I want — like 'I want 3 EC2 instances' — instead of writing the step-by-step commands to create them. Terraform figures out the how on its own."],
+    ["Basics","What is a provider in Terraform?","A provider is a plugin that lets Terraform talk to a specific platform, like AWS, Azure, or GCP. It translates my Terraform config into actual API calls for that platform."],
+    ["Basics","What is a resource in Terraform?","A resource is a single infrastructure object I want to create, like an EC2 instance or an S3 bucket, defined with a resource block in my config."]
+  ],
+  workflow: [
+    ["Workflow","What does terraform init do?","It initializes the working directory — downloading the provider plugins needed and setting up the backend where state will be stored."],
+    ["Workflow","What does terraform plan do?","It shows a preview of what Terraform would change — what would be created, updated, or destroyed — without actually making any changes. I always review this before applying."],
+    ["Workflow","What does terraform apply do?","It executes the plan and actually creates, updates, or deletes the real infrastructure to match my configuration."],
+    ["Workflow","What does terraform destroy do?","It tears down all the infrastructure that Terraform is managing, based on the current state — useful for cleaning up test environments."],
+    ["Workflow","Why is reviewing the plan output important?","Because it shows exactly what will change before it happens. Skipping this step risks accidentally deleting or modifying production resources."]
+  ],
+  state: [
+    ["State","What is Terraform state?","It's a file, usually named terraform.tfstate, where Terraform keeps track of what infrastructure it's already created and what its current configuration looks like."],
+    ["State","Why does Terraform need state at all?","Because it needs to know what already exists to figure out what to create, change, or destroy on the next run — without state, it wouldn't know the difference between new and existing resources."],
+    ["State","What is remote state?","Instead of keeping the state file only on my local machine, I store it remotely — like in an S3 bucket — so a team can share the same state and avoid conflicts."],
+    ["State","What is state locking?","It prevents two people from running Terraform at the same time and corrupting the state file. Tools like DynamoDB are commonly used alongside S3 to lock state during an apply."],
+    ["State","What happens if the state file gets out of sync with real infrastructure?","Terraform's plan will show unexpected changes, or it might try to recreate resources that already exist. I'd use terraform refresh or import to reconcile state with reality."]
+  ],
+  concepts: [
+    ["Variables","What are variables in Terraform?","They let me parameterize my configuration — like instance type or region — so the same code can be reused for different environments without hardcoding values."],
+    ["Variables","What is a variables.tf file?","It's where I define the input variables a Terraform config accepts, along with their types and default values."],
+    ["Variables","What are outputs in Terraform?","Outputs expose values from my infrastructure after it's created, like an instance's public IP, so I can view them or pass them to other configurations."],
+    ["Variables","What is a Terraform module?","A module is a reusable, self-contained group of Terraform resources — like a standard 'web server setup' — that I can call multiple times with different inputs instead of duplicating the same code."]
+  ],
+  common: [
+    ["Common Qs","Have you used Terraform before?","At a learning level — I've written configs to launch an EC2 instance and understand the plan-apply workflow and why state matters for a team."],
+    ["Common Qs","Terraform vs manually creating resources in the console?","Manual changes aren't tracked or repeatable — if the console is used, Terraform doesn't know about that change and its state falls out of sync. Best practice is to make all changes through Terraform once it's managing a resource."],
+    ["Common Qs","Terraform vs Ansible?","Terraform is mainly for provisioning infrastructure — creating servers, networks, and cloud resources. Ansible is for configuring what runs on those servers after they exist. They're often used together — Terraform builds the server, Ansible configures it."],
+    ["Common Qs","What happens if terraform apply fails partway through?","Terraform updates its state for whatever succeeded before the failure, then stops. I'd fix the error and run apply again — it only tries to create what's still missing, not everything from scratch."],
+    ["Common Qs","How do you manage different environments, like dev and prod?","Common approaches are using separate state files per environment, using workspaces, or using separate directories with their own variable values — so dev and prod never share the same state."]
+  ]
+};
+function buildGrid(id, items){
+  const grid = document.getElementById(id);
+  items.forEach(([tag,q,a])=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `<div class="tag">${tag}</div><div class="q">${q}</div><p class="a">"${a}"</p>`;
+    grid.appendChild(card);
+  });
+}
+Object.keys(data).forEach(k => buildGrid(k+'-grid', data[k]));
+
+const examples = [{
+  name: "main.tf",
+  purpose: "Launch a single EC2 instance with a security group",
+  code: `<span class="kw">provider</span> <span class="str">"aws"</span> {
+  region = <span class="str">"ap-south-1"</span>
+}
+
+<span class="kw">resource</span> <span class="str">"aws_security_group"</span> <span class="str">"web_sg"</span> {
+  name = <span class="str">"web-sg"</span>
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = <span class="str">"tcp"</span>
+    cidr_blocks = [<span class="str">"0.0.0.0/0"</span>]
+  }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_instance"</span> <span class="str">"web"</span> {
+  ami           = <span class="fn">var</span>.ami_id
+  instance_type = <span class="str">"t3.micro"</span>
+  security_groups = [aws_security_group.web_sg.name]
+
+  tags = {
+    Name = <span class="str">"staff-app-server"</span>
+  }
+}
+
+<span class="kw">output</span> <span class="str">"public_ip"</span> {
+  value = aws_instance.web.public_ip
+}`,
+  desc: "Talk through it: \"This defines a security group allowing HTTP traffic, then an EC2 instance using that security group, with the AMI passed in as a variable. The output block prints the instance's public IP after apply — so I can immediately see where the server landed.\""
+}];
+const list = document.getElementById('examples-list');
+examples.forEach(s => {
+  const el = document.createElement('div');
+  el.className='script';
+  el.innerHTML = `<div class="script-head"><div class="script-name">${s.name}</div><div class="script-purpose">${s.purpose}</div></div><pre>${s.code}</pre><div class="script-desc">${s.desc}</div>`;
+  list.appendChild(el);
+});
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
