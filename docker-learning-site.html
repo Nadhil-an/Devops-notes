@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Docker, Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;
+    --panel:#141B24;
+    --panel2:#1B2430;
+    --line:#26303C;
+    --blue:#2496ED;
+    --blue-dim:#0F3A5C;
+    --green:#3FB950;
+    --amber:#D29922;
+    --orange:#F05033;
+    --purple:#BC8CFF;
+    --text:#E6EDF3;
+    --muted:#8B98A5;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(36,150,237,0.12), transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(63,185,80,0.06), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+
+  .hero{
+    padding:34px 30px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:linear-gradient(160deg, rgba(36,150,237,0.10), rgba(20,27,36,0.4));
+    position:relative;
+    overflow:hidden;
+    margin-bottom:28px;
+  }
+  .hero-eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;letter-spacing:0.14em;
+    color:var(--blue);text-transform:uppercase;margin-bottom:10px;
+  }
+  .hero h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(30px,5vw,46px);
+    margin:0 0 10px;line-height:1.05;letter-spacing:-0.01em;
+  }
+  .hero h1 span{color:var(--blue);}
+  .hero p{color:var(--muted);max-width:580px;margin:0 0 20px;font-size:15px;line-height:1.55;}
+  .hero-graph{width:100%;max-width:600px;display:block;}
+
+  .tabs{
+    display:flex;gap:6px;flex-wrap:wrap;
+    margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:14px;
+  }
+  .tab{
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;
+    background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  }
+  .tab:hover{color:var(--text);border-color:#3a4550;}
+  .tab.active{color:#fff;background:var(--blue);border-color:var(--blue);font-weight:600;}
+
+  .section{display:none;animation:fade .25s ease;}
+  .section.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0 0 4px;}
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+
+  .diagram-panel{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:22px;margin-bottom:24px;
+  }
+  .diagram-panel svg{width:100%;height:auto;display:block;}
+  .diagram-caption{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;
+    color:var(--muted);text-align:center;margin-top:10px;
+  }
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{
+    background:var(--panel);border:1px solid var(--line);
+    border-left:3px solid var(--blue);border-radius:12px;padding:16px 18px;
+  }
+  .card .tag{
+    font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--blue);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;
+  }
+  .card .q{font-size:14.5px;font-weight:600;line-height:1.4;margin-bottom:10px;}
+  .card .a{
+    font-size:13px;line-height:1.55;color:#D6E2EE;margin:0;
+    font-style:italic;padding-top:10px;border-top:1px solid var(--line);
+  }
+
+  .table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .cmd-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .cmd-table th{
+    text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;
+    text-transform:uppercase;color:var(--muted);letter-spacing:.06em;
+    padding:8px 12px;border-bottom:1px solid var(--line);
+  }
+  .cmd-table td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  .cmd-table code{
+    font-family:'JetBrains Mono',monospace;background:rgba(36,150,237,0.14);color:var(--blue);
+    padding:2px 7px;border-radius:5px;font-size:12.5px;white-space:nowrap;
+  }
+  .cmd-table tr:last-child td{border-bottom:none;}
+
+  .script{
+    background:#0A1119;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;
+  }
+  .script-head{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 14px;border-bottom:1px solid var(--line);background:#131C27;flex-wrap:wrap;gap:4px;
+  }
+  .script-name{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--blue);font-weight:600;}
+  .script-purpose{font-family:'Inter',sans-serif;font-size:11.5px;color:var(--muted);}
+  .script pre{
+    margin:0;padding:16px 18px;font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;line-height:1.65;color:#D6E2EE;overflow-x:auto;white-space:pre;
+  }
+  .script pre .cmt{color:#6C7A85;font-style:italic;}
+  .script pre .kw{color:#BC8CFF;}
+  .script pre .str{color:#3FB950;}
+  .script pre .var{color:#58A6FF;}
+  .script pre .fn{color:#2496ED;}
+  .script-desc{
+    padding:12px 14px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--muted);line-height:1.55;background:#0F1620;
+  }
+  .script-desc code{
+    font-family:'JetBrains Mono',monospace;color:var(--blue);
+    background:rgba(36,150,237,0.12);padding:1px 5px;border-radius:4px;font-size:11.5px;
+  }
+
+  .badge-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+  .badge{
+    font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 11px;
+    border-radius:20px;border:1px solid var(--line);color:var(--muted);
+  }
+  footer{
+    text-align:center;color:var(--muted);font-size:12px;
+    margin-top:40px;font-family:'JetBrains Mono',monospace;
+  }
+
+  @media(max-width:768px){
+    .wrap{padding:24px 14px 60px;}
+    .hero{padding:24px 18px;}
+    .hero p{font-size:14px;}
+    .diagram-panel{padding:16px;}
+    .grid{grid-template-columns:1fr;gap:12px;}
+    .section-title{font-size:19px;}
+    .script pre{font-size:11.5px;}
+  }
+  @media(max-width:480px){
+    .wrap{padding:18px 10px 50px;}
+    .hero{padding:20px 14px;border-radius:14px;}
+    .hero h1{font-size:26px;}
+    .tabs{gap:5px;padding-bottom:10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab{padding:8px 12px;font-size:11.5px;flex:0 0 auto;}
+    .card{padding:14px 15px;}
+    .card .q{font-size:13.5px;}
+    .card .a{font-size:12.5px;}
+    .cmd-table th,.cmd-table td{padding:8px;font-size:12px;}
+    .cmd-table code{font-size:11px;padding:2px 5px;white-space:normal;}
+    .script pre{font-size:11px;padding:12px 14px;}
+    .diagram-caption{font-size:10px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-eyebrow">// entry-level interview prep</div>
+    <h1>Docker, <span>Explained</span></h1>
+    <p>Images, containers, Dockerfiles, and Compose — every question with its spoken answer, plus diagrams for the parts you need to visualize, and real files worth memorizing.</p>
+    <svg class="hero-graph" viewBox="0 0 600 110" xmlns="http://www.w3.org/2000/svg">
+      <text x="20" y="30" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">$ docker build -t myapp .</text>
+      <text x="20" y="55" fill="#3FB950" font-family="JetBrains Mono" font-size="12">Successfully built 4f8a2c1b9e3d</text>
+      <text x="20" y="75" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">$ docker run -d -p 8080:80 myapp</text>
+      <text x="20" y="95" fill="#2496ED" font-family="JetBrains Mono" font-size="12">a1b2c3d4e5f6</text>
+      <rect x="150" y="86" width="8" height="14" fill="#2496ED">
+        <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+      </rect>
+    </svg>
+  </div>
+
+  <div class="badge-row">
+    <span class="badge">45+ answers</span>
+    <span class="badge">2 real examples</span>
+    <span class="badge">4 diagrams</span>
+    <span class="badge">interview-ready</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="basics">Basics</button>
+    <button class="tab" data-tab="dockerfile">Dockerfile</button>
+    <button class="tab" data-tab="layers">Images & Layers</button>
+    <button class="tab" data-tab="running">Running Containers</button>
+    <button class="tab" data-tab="volumes">Volumes</button>
+    <button class="tab" data-tab="networking">Networking</button>
+    <button class="tab" data-tab="compose">Docker Compose</button>
+    <button class="tab" data-tab="env">Env Vars</button>
+    <button class="tab" data-tab="examples">Real Files</button>
+    <button class="tab" data-tab="cheat">Cheat Sheet</button>
+    <button class="tab" data-tab="common">Common Qs</button>
+  </div>
+
+  <!-- BASICS -->
+  <div class="section active" id="basics">
+    <h2 class="section-title">Basics</h2>
+    <p class="section-sub">Image vs container vs VM — the questions every Docker interview opens with.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg">
+        <text x="175" y="30" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-weight="600" font-size="15">Virtual Machine</text>
+        <rect x="60" y="45" width="230" height="180" rx="10" fill="#141B24" stroke="#26303C"/>
+        <rect x="75" y="180" width="200" height="35" rx="6" fill="#1B2430" stroke="#F05033"/>
+        <text x="175" y="202" text-anchor="middle" fill="#F05033" font-family="JetBrains Mono" font-size="11">Host OS</text>
+        <rect x="75" y="60" width="200" height="105" rx="6" fill="#0F3A5C" stroke="#2496ED" stroke-width="1.5"/>
+        <rect x="88" y="72" width="86" height="80" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="131" y="95" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="9">Guest OS</text>
+        <text x="131" y="112" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="9">App A</text>
+        <rect x="186" y="72" width="76" height="80" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="224" y="95" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="9">Guest OS</text>
+        <text x="224" y="112" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="9">App B</text>
+        <text x="175" y="240" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10.5">heavy — each app carries a full OS</text>
+
+        <text x="525" y="30" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-weight="600" font-size="15">Containers</text>
+        <rect x="410" y="45" width="230" height="180" rx="10" fill="#141B24" stroke="#26303C"/>
+        <rect x="425" y="180" width="200" height="35" rx="6" fill="#1B2430" stroke="#F05033"/>
+        <text x="525" y="202" text-anchor="middle" fill="#F05033" font-family="JetBrains Mono" font-size="11">Host OS (shared kernel)</text>
+        <rect x="425" y="60" width="90" height="105" rx="6" fill="#0F3A5C" stroke="#2496ED" stroke-width="1.5"/>
+        <text x="470" y="90" text-anchor="middle" fill="#2496ED" font-family="JetBrains Mono" font-weight="600" font-size="10">Container</text>
+        <text x="470" y="108" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="9">App A</text>
+        <rect x="530" y="60" width="90" height="105" rx="6" fill="#0F3A5C" stroke="#2496ED" stroke-width="1.5"/>
+        <text x="575" y="90" text-anchor="middle" fill="#2496ED" font-family="JetBrains Mono" font-weight="600" font-size="10">Container</text>
+        <text x="575" y="108" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="9">App B</text>
+        <text x="525" y="240" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10.5">light — apps share one kernel</text>
+      </svg>
+      <div class="diagram-caption">Same two apps, isolated either way — but containers skip the duplicate OS layer</div>
+    </div>
+    <div class="grid" id="basics-grid"></div>
+  </div>
+
+  <!-- DOCKERFILE -->
+  <div class="section" id="dockerfile">
+    <h2 class="section-title">Dockerfile</h2>
+    <p class="section-sub">The recipe that builds an image, one instruction at a time.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 210" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="20" width="300" height="170" rx="10" fill="#0A1119" stroke="#26303C"/>
+        <text x="50" y="45" fill="#BC8CFF" font-family="JetBrains Mono" font-size="12">FROM node:18-alpine</text>
+        <text x="50" y="68" fill="#2496ED" font-family="JetBrains Mono" font-size="12">WORKDIR /app</text>
+        <text x="50" y="91" fill="#3FB950" font-family="JetBrains Mono" font-size="12">COPY package*.json ./</text>
+        <text x="50" y="114" fill="#D29922" font-family="JetBrains Mono" font-size="12">RUN npm ci --production</text>
+        <text x="50" y="137" fill="#3FB950" font-family="JetBrains Mono" font-size="12">COPY . .</text>
+        <text x="50" y="160" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">EXPOSE 3000</text>
+        <text x="50" y="180" fill="#F05033" font-family="JetBrains Mono" font-size="12">CMD ["node","server.js"]</text>
+
+        <path d="M340,105 L390,105" stroke="#2496ED" stroke-width="2" marker-end="url(#a1)"/>
+        <text x="365" y="95" text-anchor="middle" fill="#2496ED" font-family="JetBrains Mono" font-size="10">build</text>
+
+        <rect x="400" y="60" width="270" height="90" rx="10" fill="#141B24" stroke="#2496ED" stroke-width="1.5"/>
+        <text x="535" y="90" text-anchor="middle" fill="#2496ED" font-family="Space Grotesk" font-weight="600" font-size="15">myapp:latest</text>
+        <text x="535" y="112" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10.5">a read-only image, ready to run</text>
+        <text x="535" y="130" text-anchor="middle" fill="#8B98A5" font-family="JetBrains Mono" font-size="9.5">docker run myapp:latest</text>
+
+        <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2496ED"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">Each line runs top to bottom, one layer per instruction, ending in an image you can run anywhere</div>
+    </div>
+    <div class="grid" id="dockerfile-grid"></div>
+  </div>
+
+  <!-- LAYERS -->
+  <div class="section" id="layers">
+    <h2 class="section-title">Images & Layers</h2>
+    <p class="section-sub">Why instruction order in a Dockerfile actually matters for build speed.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg">
+        <text x="350" y="25" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-weight="600" font-size="14">Layer stack (bottom to top)</text>
+
+        <rect x="220" y="150" width="260" height="34" rx="4" fill="#0F3A5C" stroke="#2496ED"/>
+        <text x="350" y="171" text-anchor="middle" fill="#2496ED" font-family="JetBrains Mono" font-size="11">FROM node:18-alpine</text>
+
+        <rect x="220" y="116" width="260" height="34" rx="4" fill="#1B2430" stroke="#BC8CFF"/>
+        <text x="350" y="137" text-anchor="middle" fill="#BC8CFF" font-family="JetBrains Mono" font-size="11">COPY package*.json .</text>
+
+        <rect x="220" y="82" width="260" height="34" rx="4" fill="#1B2430" stroke="#D29922"/>
+        <text x="350" y="103" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="11">RUN npm ci</text>
+
+        <rect x="220" y="48" width="260" height="34" rx="4" fill="#1B2430" stroke="#3FB950"/>
+        <text x="350" y="69" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="11">COPY . . (your code)</text>
+
+        <text x="510" y="171" fill="#8B98A5" font-family="Inter" font-size="10.5">rarely changes</text>
+        <text x="510" y="69" fill="#F05033" font-family="Inter" font-size="10.5">changes every commit</text>
+
+        <path d="M500,166 L500,60" stroke="#26303C" stroke-width="1.5" marker-end="url(#a2)"/>
+        <text x="512" y="115" fill="#8B98A5" font-family="JetBrains Mono" font-size="9.5" transform="rotate(-90 512 115)">cached ↑ if unchanged</text>
+
+        <defs><marker id="a2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#26303C"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">Put things that rarely change near the bottom — Docker reuses cached layers below the first changed line</div>
+    </div>
+    <div class="grid" id="layers-grid"></div>
+  </div>
+
+  <!-- RUNNING -->
+  <div class="section" id="running">
+    <h2 class="section-title">Running Containers</h2>
+    <p class="section-sub">The everyday commands you'll be asked to explain or use.</p>
+    <div class="grid" id="running-grid"></div>
+  </div>
+
+  <!-- VOLUMES -->
+  <div class="section" id="volumes">
+    <h2 class="section-title">Volumes & Data</h2>
+    <p class="section-sub">Why container data disappears, and how to stop that from happening.</p>
+    <div class="grid" id="volumes-grid"></div>
+  </div>
+
+  <!-- NETWORKING -->
+  <div class="section" id="networking">
+    <h2 class="section-title">Networking</h2>
+    <p class="section-sub">How containers find and talk to each other.</p>
+    <div class="grid" id="networking-grid"></div>
+  </div>
+
+  <!-- COMPOSE -->
+  <div class="section" id="compose">
+    <h2 class="section-title">Docker Compose</h2>
+    <p class="section-sub">Running a whole stack — app, database, cache — with one command.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
+        <rect x="250" y="10" width="200" height="30" rx="6" fill="#141B24" stroke="#26303C"/>
+        <text x="350" y="30" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="12">docker-compose.yml</text>
+
+        <path d="M300,40 L150,80" stroke="#26303C" stroke-width="1.5"/>
+        <path d="M400,40 L550,80" stroke="#26303C" stroke-width="1.5"/>
+
+        <rect x="60" y="85" width="180" height="90" rx="10" fill="#0F3A5C" stroke="#2496ED" stroke-width="1.5"/>
+        <text x="150" y="112" text-anchor="middle" fill="#2496ED" font-family="JetBrains Mono" font-weight="600" font-size="13">web</text>
+        <text x="150" y="132" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">port 3000:3000</text>
+        <text x="150" y="150" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">connects to → db</text>
+
+        <path d="M240,130 L460,130" stroke="#3FB950" stroke-width="2" stroke-dasharray="4,3"/>
+        <text x="350" y="122" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="9.5">same network</text>
+
+        <rect x="460" y="85" width="180" height="90" rx="10" fill="#1B2430" stroke="#3FB950" stroke-width="1.5"/>
+        <text x="550" y="112" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-weight="600" font-size="13">db</text>
+        <text x="550" y="132" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">postgres:15</text>
+        <text x="550" y="150" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">volume: dbdata</text>
+      </svg>
+      <div class="diagram-caption">One file defines both services — they reach each other by service name, no manual networking needed</div>
+    </div>
+    <div class="grid" id="compose-grid"></div>
+  </div>
+
+  <!-- ENV -->
+  <div class="section" id="env">
+    <h2 class="section-title">Environment Variables</h2>
+    <p class="section-sub">Getting config and secrets into a container without hardcoding them.</p>
+    <div class="grid" id="env-grid"></div>
+  </div>
+
+  <!-- REAL EXAMPLES -->
+  <div class="section" id="examples">
+    <h2 class="section-title">Real Files Worth Memorizing</h2>
+    <p class="section-sub">A Dockerfile and a docker-compose.yml you can talk through line by line in an interview.</p>
+    <div id="examples-list"></div>
+  </div>
+
+  <!-- CHEAT SHEET -->
+  <div class="section" id="cheat">
+    <h2 class="section-title">Cheat Sheet</h2>
+    <p class="section-sub">The commands worth having on the tip of your tongue.</p>
+    <div class="diagram-panel">
+      <div class="table-scroll">
+      <table class="cmd-table">
+        <tr><th>Command</th><th>What it does</th></tr>
+        <tr><td><code>docker build -t name .</code></td><td>Build an image from a Dockerfile</td></tr>
+        <tr><td><code>docker run -d -p 8080:80 name</code></td><td>Run a container in the background with a port mapped</td></tr>
+        <tr><td><code>docker ps</code> / <code>docker ps -a</code></td><td>List running / all containers</td></tr>
+        <tr><td><code>docker stop &lt;id&gt;</code></td><td>Gracefully stop a container</td></tr>
+        <tr><td><code>docker rm &lt;id&gt;</code></td><td>Remove a stopped container</td></tr>
+        <tr><td><code>docker rmi &lt;image&gt;</code></td><td>Remove an image</td></tr>
+        <tr><td><code>docker exec -it &lt;id&gt; bash</code></td><td>Open a shell inside a running container</td></tr>
+        <tr><td><code>docker logs -f &lt;id&gt;</code></td><td>Follow live logs</td></tr>
+        <tr><td><code>docker pull</code> / <code>docker push</code></td><td>Download / upload image from a registry</td></tr>
+        <tr><td><code>docker volume ls</code></td><td>List volumes</td></tr>
+        <tr><td><code>docker network ls</code></td><td>List networks</td></tr>
+        <tr><td><code>docker compose up -d</code></td><td>Start all services in the background</td></tr>
+        <tr><td><code>docker compose down</code></td><td>Stop and remove everything from Compose</td></tr>
+        <tr><td><code>docker system prune</code></td><td>Clean up unused images/containers/networks</td></tr>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMON -->
+  <div class="section" id="common">
+    <h2 class="section-title">Common Interview Questions</h2>
+    <p class="section-sub">Practice these out loud.</p>
+    <div class="grid" id="common-grid"></div>
+  </div>
+
+  <footer>tap a tab above to jump between topics</footer>
+</div>
+
+<script>
+const data = {
+  basics: [
+    ["Basics","What is Docker?","Docker is a tool that packages an application along with everything it needs — libraries, dependencies, settings — into a single unit called a container. That container runs the same way on any machine, so I don't get the 'it works on my machine' problem."],
+    ["Basics","Why do we use Docker?","Because it makes applications portable and consistent. Instead of manually setting up an environment on every server, I package it once as a container and run it anywhere — my laptop, a teammate's machine, or production."],
+    ["Basics","What is a container?","A container is a running instance of an image. It's a lightweight, isolated environment that has its own filesystem, process space, and network, but shares the host machine's OS kernel."],
+    ["Basics","What is an image?","An image is a read-only template that contains the application code, runtime, libraries, and configuration needed to run it. A container is what you get when you actually run that image."],
+    ["Basics","Difference between an image and a container?","An image is like a blueprint or a class — it doesn't do anything by itself. A container is a running instance of that image — like an object created from that class. I can create many containers from the same image."],
+    ["Basics","Difference between a container and a VM?","A VM includes a full copy of an operating system, which makes it heavier and slower to start. A container shares the host machine's OS kernel and only packages the application and its dependencies, so it's much lighter and starts in seconds instead of minutes."],
+    ["Basics","Why are containers faster than VMs?","Because they don't boot a full operating system. A container just starts the application process directly on top of the host's existing kernel, so startup takes seconds instead of the minute or more a VM needs."]
+  ],
+  dockerfile: [
+    ["Dockerfile","What is a Dockerfile?","A Dockerfile is a text file with step-by-step instructions for building a Docker image — what base OS or runtime to start from, what files to copy in, what commands to run, and what command starts the app."],
+    ["Dockerfile","Common Dockerfile instructions?","FROM sets the base image. WORKDIR sets the working directory inside the container. COPY brings files from my machine into the image. RUN executes a command during the build, like installing packages. EXPOSE documents which port the app uses. CMD sets the default command that runs when the container starts."],
+    ["Dockerfile","Difference between RUN and CMD?","RUN executes during the image build process — like installing dependencies — and its result gets baked into the image. CMD defines what command runs when the container actually starts, and there's usually only one CMD per Dockerfile."],
+    ["Dockerfile","Difference between CMD and ENTRYPOINT?","CMD sets a default command that can be easily overridden when running the container. ENTRYPOINT is meant to always run and is harder to override — it's often used when the container should always behave like a specific executable, with CMD supplying default arguments to it."],
+    ["Dockerfile","How do you build an image?","I run docker build -t myapp:latest . — the -t tags the image with a name, and the dot tells Docker to look for the Dockerfile in the current folder."],
+    ["Dockerfile","What is a multi-stage build?","It's a Dockerfile technique where I use multiple FROM statements — one stage to build or compile the app, and a final smaller stage that only copies over the finished output. This keeps the final image much smaller because build tools don't end up in the production image."]
+  ],
+  layers: [
+    ["Layers","What is a Docker image layer?","Every instruction in a Dockerfile — like RUN or COPY — creates a new layer. Docker caches these layers, so if nothing changes in an earlier layer, it reuses the cache instead of rebuilding it, which makes builds faster."],
+    ["Layers","Why does instruction order matter?","Because of layer caching. I put things that change rarely, like installing dependencies, near the top, and things that change often, like copying my source code, near the bottom. That way, small code changes don't force Docker to rebuild the dependency layers."],
+    ["Layers","What is Docker Hub?","Docker Hub is a public registry where Docker images are stored and shared, similar to how GitHub hosts code. I can pull official images like nginx or postgres from there, or push my own images."],
+    ["Layers","What does docker pull do?","It downloads an image from a registry like Docker Hub onto my local machine."],
+    ["Layers","What does docker push do?","It uploads an image from my local machine to a registry, so others can pull and use it."]
+  ],
+  running: [
+    ["Running","How do you run a container?","I use docker run followed by the image name. For example, docker run -d -p 8080:80 nginx runs an nginx container in the background and maps port 8080 on my machine to port 80 inside the container."],
+    ["Running","What does the -d flag do?","It runs the container in detached mode, meaning it runs in the background instead of taking over my terminal."],
+    ["Running","What does -p do?","It publishes a port, mapping a port on the host machine to a port inside the container, in the format host:container."],
+    ["Running","How do you see running containers?","I use docker ps to see currently running containers, or docker ps -a to see all containers, including stopped ones."],
+    ["Running","How do you stop and remove a container?","docker stop followed by the container ID or name stops it gracefully. docker rm removes it completely. I can also use docker rm -f to force-remove a running container."],
+    ["Running","How do you view container logs?","I use docker logs followed by the container name, or docker logs -f to follow the logs in real time, similar to tail -f."],
+    ["Running","How do you get a shell inside a container?","I use docker exec -it followed by the container name and bash, like docker exec -it myapp bash. The -it flags make it interactive with a terminal."],
+    ["Running","Difference between docker stop and docker kill?","docker stop sends a graceful shutdown signal and gives the process time to close cleanly. docker kill stops it immediately, without giving it a chance to clean up."]
+  ],
+  volumes: [
+    ["Volumes","What is a Docker volume?","A volume is a way to store data outside the container's writable layer, so the data survives even if the container is deleted or recreated. It's how I persist things like database files."],
+    ["Volumes","Why can't I just store data inside the container?","Because a container's filesystem is temporary — if I delete or recreate the container, any data written inside it is lost. Volumes exist so important data, like a database, survives container restarts."],
+    ["Volumes","How do you mount a volume?","I use the -v flag when running a container. For example, docker run -v mydata:/var/lib/mysql mysql creates or reuses a volume called mydata and mounts it into the container's MySQL data folder."],
+    ["Volumes","Volume vs bind mount?","A volume is fully managed by Docker and stored in Docker's own area on the host. A bind mount links a specific folder on my machine directly into the container, which is useful during development when I want live code changes to reflect immediately."]
+  ],
+  networking: [
+    ["Networking","How do containers talk to each other?","By default, Docker creates a network, and containers on the same network can reach each other using their container name as the hostname. So a web app container can just connect to 'db:5432' instead of needing an IP address."],
+    ["Networking","What is the default Docker network mode?","It's called bridge — Docker creates a private internal network, and containers get their own internal IP. To reach a container from outside, I have to publish a port."],
+    ["Networking","How do you create a custom network?","I use docker network create mynetwork, then run containers with --network mynetwork so they can discover and talk to each other by name."]
+  ],
+  compose: [
+    ["Compose","What is Docker Compose?","Docker Compose lets me define and run multiple containers together using a single YAML file, instead of typing long docker run commands for each one. It's how I manage apps that need a web server, a database, and other services running together."],
+    ["Compose","What is a docker-compose.yml file?","It's a YAML file where I define each service — like web, db, redis — along with their image, ports, volumes, and environment variables. Running docker compose up starts everything together with the right networking already set up."],
+    ["Compose","How do you start and stop everything?","docker compose up starts all the services, and -d runs them in the background. docker compose down stops and removes all the containers, networks, and volumes defined in the file."],
+    ["Compose","Why use Compose over separate docker run commands?","Because real apps usually need multiple containers working together — like a frontend, backend, and database. Compose defines all of them, their connections, and their startup order in one file, so the whole environment can be spun up with a single command."]
+  ],
+  env: [
+    ["Env Vars","How do you pass environment variables to a container?","I use the -e flag with docker run, like -e DB_HOST=localhost, or I define them under the environment section in a docker-compose.yml file."],
+    ["Env Vars","How do you use a .env file with Docker?","I put key-value pairs in a file named .env, and Docker Compose automatically loads them, so I can reference them as variables inside docker-compose.yml without hardcoding secrets into the file."]
+  ],
+  common: [
+    ["Common Qs","Have you used Docker in a real project?","Yes — I've used it to containerize applications so they run the same way locally as they would on a server, and to keep separate services isolated from each other."],
+    ["Common Qs","How do you reduce the size of a Docker image?","I use a lightweight base image like alpine instead of a full OS image, combine RUN commands to reduce layers, avoid installing unnecessary packages, and use multi-stage builds to leave build tools out of the final image."],
+    ["Common Qs","What happens if a container crashes?","By default it just stops. But I can add a restart policy, like --restart unless-stopped, so Docker automatically restarts it if it crashes or the host reboots."],
+    ["Common Qs","How would you debug a crashing container?","I'd check docker logs first to see the error. If the app crashes before logging anything useful, I'd run it interactively with docker run -it image_name sh to poke around inside manually."],
+    ["Common Qs","Difference between COPY and ADD?","They both copy files into the image, but ADD has extra features — it can automatically extract tar files and fetch remote URLs. Because of that unpredictability, COPY is usually the safer, more explicit choice for regular file copying."],
+    ["Common Qs","How do you check Docker's disk usage?","I run docker system df to see space used by images, containers, and volumes, and docker system prune to clean up unused ones."],
+    ["Common Qs","Compose vs Kubernetes?","Compose is meant for running multi-container apps on a single machine, usually for development or small deployments. Kubernetes manages containers across many machines, with auto-scaling, self-healing, and load balancing — it's built for production at scale."]
+  ]
+};
+
+function buildGrid(id, items){
+  const grid = document.getElementById(id);
+  items.forEach(([tag,q,a])=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `
+      <div class="tag">${tag}</div>
+      <div class="q">${q}</div>
+      <p class="a">"${a}"</p>`;
+    grid.appendChild(card);
+  });
+}
+Object.keys(data).forEach(k => buildGrid(k+'-grid', data[k]));
+
+const examples = [
+  {
+    name: "Dockerfile",
+    purpose: "A real Node.js app image — worth memorizing the shape of",
+    code: `<span class="kw">FROM</span> node:18-alpine
+<span class="fn">WORKDIR</span> /app
+<span class="fn">COPY</span> package*.json ./
+<span class="kw">RUN</span> npm ci --production
+<span class="fn">COPY</span> . .
+<span class="fn">EXPOSE</span> 3000
+<span class="kw">CMD</span> [<span class="str">"node"</span>, <span class="str">"server.js"</span>]`,
+    desc: "Talk through it like this if asked: \"It starts from a lightweight Node image, sets the working directory, copies just the package files first so npm install gets cached separately from the rest of the code, installs dependencies, copies the rest of the app, documents port 3000, and finally runs the server — that ordering keeps rebuilds fast when only the code changes.\""
+  },
+  {
+    name: "docker-compose.yml",
+    purpose: "A web app + Postgres database running together",
+    code: `<span class="kw">version:</span> <span class="str">"3.8"</span>
+<span class="kw">services:</span>
+  <span class="var">web:</span>
+    <span class="fn">build:</span> .
+    <span class="fn">ports:</span>
+      - <span class="str">"3000:3000"</span>
+    <span class="fn">environment:</span>
+      - DB_HOST=db
+    <span class="fn">depends_on:</span>
+      - db
+  <span class="var">db:</span>
+    <span class="fn">image:</span> postgres:15
+    <span class="fn">environment:</span>
+      - POSTGRES_PASSWORD=secret
+    <span class="fn">volumes:</span>
+      - dbdata:/var/lib/postgresql/data
+
+<span class="kw">volumes:</span>
+  <span class="var">dbdata:</span>`,
+    desc: "Talk through it like this if asked: \"This defines two services — a web app built from my local Dockerfile, and a Postgres database using the official image. The web service depends on the db, connects to it using the hostname 'db', and the database's data is stored in a named volume so it survives container restarts.\""
+  }
+];
+const list = document.getElementById('examples-list');
+examples.forEach(s => {
+  const el = document.createElement('div');
+  el.className='script';
+  el.innerHTML = `
+    <div class="script-head">
+      <div class="script-name">${s.name}</div>
+      <div class="script-purpose">${s.purpose}</div>
+    </div>
+    <pre>${s.code}</pre>
+    <div class="script-desc">${s.desc}</div>`;
+  list.appendChild(el);
+});
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
