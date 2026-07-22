@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CI/CD, Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;--panel:#141B24;--line:#26303C;
+    --teal:#2DD4BF;--blue:#58A6FF;--green:#3FB950;--amber:#D29922;--orange:#F05033;--purple:#BC8CFF;
+    --text:#E6EDF3;--muted:#8B98A5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(circle at 15% 0%, rgba(45,212,191,0.12), transparent 45%),radial-gradient(circle at 90% 10%, rgba(88,166,255,0.08), transparent 40%),var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+  .hero{padding:34px 30px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg, rgba(45,212,191,0.10), rgba(20,27,36,0.4));margin-bottom:28px;}
+  .hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;margin-bottom:10px;}
+  .hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,5vw,46px);margin:0 0 10px;line-height:1.05;letter-spacing:-.01em;}
+  .hero h1 span{color:var(--teal);}
+  .hero p{color:var(--muted);max-width:580px;margin:0 0 20px;font-size:15px;line-height:1.55;}
+  .hero-graph{width:100%;max-width:600px;display:block;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:14px;}
+  .tab{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+  .tab:hover{color:var(--text);border-color:#3a4550;}
+  .tab.active{color:#0D1117;background:var(--teal);border-color:var(--teal);font-weight:600;}
+  .section{display:none;animation:fade .25s ease;}
+  .section.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0 0 4px;}
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+  .diagram-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:24px;}
+  .diagram-panel svg{width:100%;height:auto;display:block;}
+  .diagram-caption{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:12px;padding:16px 18px;}
+  .card .tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+  .card .q{font-size:14.5px;font-weight:600;line-height:1.4;margin-bottom:10px;}
+  .card .a{font-size:13px;line-height:1.55;color:#D6E2EE;margin:0;font-style:italic;padding-top:10px;border-top:1px solid var(--line);}
+  .table-scroll{width:100%;overflow-x:auto;}
+  .cmd-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .cmd-table th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.06em;padding:8px 12px;border-bottom:1px solid var(--line);}
+  .cmd-table td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  .cmd-table code{font-family:'JetBrains Mono',monospace;background:rgba(45,212,191,0.14);color:var(--teal);padding:2px 7px;border-radius:5px;font-size:12.5px;white-space:nowrap;}
+  .cmd-table tr:last-child td{border-bottom:none;}
+  .script{background:#0A1119;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+  .script-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:#131C27;flex-wrap:wrap;gap:4px;}
+  .script-name{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--teal);font-weight:600;}
+  .script-purpose{font-size:11.5px;color:var(--muted);}
+  .script pre{margin:0;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.65;color:#D6E2EE;overflow-x:auto;white-space:pre;}
+  .script pre .cmt{color:#6C7A85;font-style:italic;}
+  .script pre .kw{color:#BC8CFF;}
+  .script pre .str{color:#3FB950;}
+  .script pre .fn{color:#2DD4BF;}
+  .script-desc{padding:12px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);line-height:1.55;background:#0F1620;}
+  .badge-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);color:var(--muted);}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:40px;font-family:'JetBrains Mono',monospace;}
+  @media(max-width:768px){.wrap{padding:24px 14px 60px;}.hero{padding:24px 18px;}.hero p{font-size:14px;}.diagram-panel{padding:16px;}.grid{grid-template-columns:1fr;gap:12px;}.section-title{font-size:19px;}.script pre{font-size:11.5px;}}
+  @media(max-width:480px){.wrap{padding:18px 10px 50px;}.hero{padding:20px 14px;border-radius:14px;}.hero h1{font-size:26px;}.tabs{gap:5px;padding-bottom:10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;}.tabs::-webkit-scrollbar{display:none;}.tab{padding:8px 12px;font-size:11.5px;flex:0 0 auto;}.card{padding:14px 15px;}.card .q{font-size:13.5px;}.card .a{font-size:12.5px;}.cmd-table th,.cmd-table td{padding:8px;font-size:12px;}.script pre{font-size:11px;padding:12px 14px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-eyebrow">// entry-level interview prep</div>
+    <h1>CI/CD, <span>Explained</span></h1>
+    <p>How code goes from a commit to production automatically. Every question with its spoken answer, plus a real GitHub Actions pipeline you can talk through.</p>
+    <svg class="hero-graph" viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg">
+      <text x="20" y="30" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">$ git push origin main</text>
+      <text x="20" y="55" fill="#2DD4BF" font-family="JetBrains Mono" font-size="12">→ Build ✓  Test ✓  Deploy ✓</text>
+      <text x="20" y="80" fill="#3FB950" font-family="JetBrains Mono" font-size="12">Deployed to production in 2m 14s</text>
+    </svg>
+  </div>
+  <div class="badge-row">
+    <span class="badge">35+ answers</span><span class="badge">real pipeline</span><span class="badge">3 diagrams</span><span class="badge">interview-ready</span>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="basics">Basics</button>
+    <button class="tab" data-tab="ci">Continuous Integration</button>
+    <button class="tab" data-tab="cd">Continuous Delivery/Deploy</button>
+    <button class="tab" data-tab="actions">GitHub Actions</button>
+    <button class="tab" data-tab="jenkins">Jenkins</button>
+    <button class="tab" data-tab="strategies">Deploy Strategies</button>
+    <button class="tab" data-tab="examples">Real Pipeline</button>
+    <button class="tab" data-tab="common">Common Qs</button>
+  </div>
+
+  <div class="section active" id="basics">
+    <h2 class="section-title">Basics</h2>
+    <p class="section-sub">Why CI/CD exists and what problem it solves.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 170" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="60" width="100" height="50" rx="8" fill="#141B24" stroke="#58A6FF"/>
+        <text x="70" y="90" text-anchor="middle" fill="#58A6FF" font-family="JetBrains Mono" font-size="11">git push</text>
+        <path d="M120,85 L170,85" stroke="#2DD4BF" stroke-width="2" marker-end="url(#c1)"/>
+        <rect x="180" y="60" width="100" height="50" rx="8" fill="#141B24" stroke="#2DD4BF"/>
+        <text x="230" y="90" text-anchor="middle" fill="#2DD4BF" font-family="JetBrains Mono" font-size="11">build</text>
+        <path d="M280,85 L330,85" stroke="#2DD4BF" stroke-width="2" marker-end="url(#c1)"/>
+        <rect x="340" y="60" width="100" height="50" rx="8" fill="#141B24" stroke="#D29922"/>
+        <text x="390" y="90" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="11">test</text>
+        <path d="M440,85 L490,85" stroke="#2DD4BF" stroke-width="2" marker-end="url(#c1)"/>
+        <rect x="500" y="60" width="100" height="50" rx="8" fill="#141B24" stroke="#3FB950"/>
+        <text x="550" y="90" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="11">deploy</text>
+        <text x="345" y="35" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="11">every push triggers this automatically</text>
+        <defs><marker id="c1" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#2DD4BF"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">This whole chain runs on every commit — no manual steps</div>
+    </div>
+    <div class="grid" id="basics-grid"></div>
+  </div>
+
+  <div class="section" id="ci">
+    <h2 class="section-title">Continuous Integration</h2>
+    <p class="section-sub">Catching problems early, every time someone pushes code.</p>
+    <div class="grid" id="ci-grid"></div>
+  </div>
+
+  <div class="section" id="cd">
+    <h2 class="section-title">Continuous Delivery / Deployment</h2>
+    <p class="section-sub">The two CDs — and why they're not the same thing.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 150" xmlns="http://www.w3.org/2000/svg">
+        <text x="175" y="25" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-weight="600" font-size="14">Continuous Delivery</text>
+        <rect x="60" y="40" width="110" height="45" rx="8" fill="#141B24" stroke="#D29922"/>
+        <text x="115" y="66" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="11">tested build</text>
+        <path d="M170,62 L220,62" stroke="#D29922" stroke-width="2" marker-end="url(#c2)"/>
+        <rect x="230" y="40" width="120" height="45" rx="8" fill="#0F3A5C" stroke="#D29922"/>
+        <text x="290" y="60" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="10.5">human clicks</text>
+        <text x="290" y="75" text-anchor="middle" fill="#D29922" font-family="JetBrains Mono" font-size="10.5">"deploy" ✋</text>
+
+        <text x="525" y="25" text-anchor="middle" fill="#E6EDF3" font-family="Space Grotesk" font-weight="600" font-size="14">Continuous Deployment</text>
+        <rect x="410" y="40" width="110" height="45" rx="8" fill="#141B24" stroke="#3FB950"/>
+        <text x="465" y="66" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="11">tested build</text>
+        <path d="M520,62 L570,62" stroke="#3FB950" stroke-width="2" marker-end="url(#c2)"/>
+        <rect x="580" y="40" width="90" height="45" rx="8" fill="#0F3A5C" stroke="#3FB950"/>
+        <text x="625" y="66" text-anchor="middle" fill="#3FB950" font-family="JetBrains Mono" font-size="11">live ✓ auto</text>
+
+        <text x="350" y="130" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="11">Same pipeline, one extra manual gate is the only difference</text>
+        <defs><marker id="c2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#8B98A5"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">Delivery = always ready, human decides. Deployment = ships automatically if tests pass.</div>
+    </div>
+    <div class="grid" id="cd-grid"></div>
+  </div>
+
+  <div class="section" id="actions">
+    <h2 class="section-title">GitHub Actions</h2>
+    <p class="section-sub">The CI/CD tool built directly into GitHub.</p>
+    <div class="grid" id="actions-grid"></div>
+  </div>
+
+  <div class="section" id="jenkins">
+    <h2 class="section-title">Jenkins</h2>
+    <p class="section-sub">The classic, most-deployed CI/CD tool in enterprises.</p>
+    <div class="grid" id="jenkins-grid"></div>
+  </div>
+
+  <div class="section" id="strategies">
+    <h2 class="section-title">Deployment Strategies</h2>
+    <p class="section-sub">How to release without breaking production.</p>
+    <div class="grid" id="strategies-grid"></div>
+  </div>
+
+  <div class="section" id="examples">
+    <h2 class="section-title">A Real Pipeline</h2>
+    <p class="section-sub">A GitHub Actions workflow you can talk through line by line.</p>
+    <div id="examples-list"></div>
+  </div>
+
+  <div class="section" id="common">
+    <h2 class="section-title">Common Interview Questions</h2>
+    <p class="section-sub">Practice these out loud.</p>
+    <div class="grid" id="common-grid"></div>
+  </div>
+
+  <footer>tap a tab above to jump between topics</footer>
+</div>
+
+<script>
+const data = {
+  basics: [
+    ["Basics","What is CI/CD?","CI/CD stands for Continuous Integration and Continuous Delivery or Deployment. It's the practice of automatically building, testing, and releasing code every time it changes, instead of doing those steps manually."],
+    ["Basics","Why does CI/CD matter?","Because manual releases are slow and error-prone. Automating build, test, and deploy means bugs get caught earlier, releases happen more often, and rollbacks are faster if something breaks."],
+    ["Basics","What is a pipeline?","A pipeline is the defined sequence of automated steps — like build, test, then deploy — that runs whenever code changes. It's usually described in a config file that lives alongside the code."],
+    ["Basics","What triggers a pipeline to run?","Usually a git push or a pull request. I can also configure it to run on a schedule, or trigger it manually."],
+    ["Basics","What is a build artifact?","It's the output produced by the build step — like a compiled binary, a Docker image, or a packaged zip file — that gets passed along to later stages like testing or deployment."]
+  ],
+  ci: [
+    ["CI","What is Continuous Integration specifically?","It means every time someone pushes code, it automatically gets built and tested. This catches bugs early, before they pile up or get merged into main."],
+    ["CI","Why is CI valuable for teams?","Because multiple people are changing the same codebase. CI catches integration problems immediately — like one person's change breaking another's — instead of discovering it days later."],
+    ["CI","What usually runs during CI?","Installing dependencies, compiling or building the app, running unit tests, running linters for code style, and sometimes security scans."],
+    ["CI","What happens if a CI check fails?","The pipeline stops and reports the failure. On GitHub, that shows up as a red X on the pull request, usually blocking it from being merged until it's fixed."]
+  ],
+  cd: [
+    ["CD","What is Continuous Delivery?","It means the code is automatically built, tested, and packaged so it's always ready to release — but an actual human clicks a button to push it live."],
+    ["CD","What is Continuous Deployment?","It's the same as delivery, but there's no manual approval step — if all tests pass, the code goes live automatically."],
+    ["CD","Which is safer for a small team — Delivery or Deployment?","Delivery, usually, because there's a human checkpoint before anything reaches real users. Deployment is more common once a team has strong automated tests they fully trust."]
+  ],
+  actions: [
+    ["GitHub Actions","What is GitHub Actions?","It's GitHub's built-in CI/CD tool. I define workflows in YAML files inside a .github/workflows folder, and GitHub runs them automatically on events like a push or pull request."],
+    ["GitHub Actions","What is a workflow file?","It's a YAML file that defines when the pipeline runs, what jobs it contains, and what steps each job executes — like checking out code, installing dependencies, and running tests."],
+    ["GitHub Actions","What is a job vs a step?","A job is a group of steps that run on the same runner machine. A step is a single task inside that job, like running a command or using a pre-built action."],
+    ["GitHub Actions","What is a 'runner' in GitHub Actions?","It's the machine — hosted by GitHub or self-hosted — that actually executes the workflow's jobs. GitHub provides free Linux, Windows, and macOS runners."],
+    ["GitHub Actions","What are secrets in GitHub Actions?","They're encrypted environment variables, like API keys or passwords, stored in the repo settings instead of hardcoded in the workflow file, and accessed using secrets.MY_KEY syntax."]
+  ],
+  jenkins: [
+    ["Jenkins","What is Jenkins?","Jenkins is an open-source automation server used to build CI/CD pipelines. It's older than GitHub Actions and very common in enterprise environments because it's flexible and has a huge plugin ecosystem."],
+    ["Jenkins","What is a Jenkinsfile?","It's a text file, usually written in Groovy syntax, that defines the pipeline as code — the stages, steps, and logic — instead of configuring it manually through Jenkins' UI."],
+    ["Jenkins","What are stages in a Jenkins pipeline?","Stages are the major phases of the pipeline, like Build, Test, and Deploy. Each stage groups related steps and shows up as a distinct block in Jenkins' visual pipeline view."],
+    ["Jenkins","Jenkins vs GitHub Actions?","Jenkins is self-hosted and highly customizable through plugins, which makes it powerful but more work to maintain. GitHub Actions is built into GitHub, easier to set up, and good enough for most projects that already live on GitHub."]
+  ],
+  strategies: [
+    ["Strategies","What is a rolling deployment?","It gradually replaces old instances with new ones, a few at a time, so there's no downtime and I can catch issues before the whole fleet is updated."],
+    ["Strategies","What is blue-green deployment?","I run two identical environments — blue is live, green is the new version. Once green is tested, I switch traffic to it. If something's wrong, I switch back to blue instantly."],
+    ["Strategies","What is a canary release?","I roll out the new version to a small percentage of users first, watch for errors, and gradually increase the rollout if everything looks healthy."],
+    ["Strategies","How would you roll back a bad deployment?","If using blue-green, I'd just switch traffic back to the previous environment. Otherwise, I'd redeploy the last known good build or use git revert followed by re-running the pipeline."]
+  ],
+  common: [
+    ["Common Qs","Have you built a CI/CD pipeline before?","Yes — I've set up workflows that run tests automatically on every push, and deploy the app when changes land on the main branch."],
+    ["Common Qs","How would you speed up a slow pipeline?","I'd cache dependencies between runs, run independent test suites in parallel, and only run the full pipeline on relevant file changes instead of every single push."],
+    ["Common Qs","What's the difference between a build failing and a deploy failing?","A build failure means the code itself has an error — like a compile error or failed test. A deploy failure means the code was fine, but something went wrong pushing it live, like a config or infrastructure issue."],
+    ["Common Qs","How do you handle secrets in a pipeline?","I never hardcode them in the workflow file. I store them as encrypted secrets in the CI/CD tool's settings, and reference them as environment variables at runtime."],
+    ["Common Qs","What would you do if a deployment broke production?","Roll back immediately to the last known good version first, then investigate the root cause afterward — stability comes before diagnosis in a live incident."]
+  ]
+};
+function buildGrid(id, items){
+  const grid = document.getElementById(id);
+  items.forEach(([tag,q,a])=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `<div class="tag">${tag}</div><div class="q">${q}</div><p class="a">"${a}"</p>`;
+    grid.appendChild(card);
+  });
+}
+Object.keys(data).forEach(k => buildGrid(k+'-grid', data[k]));
+
+const examples = [{
+  name: ".github/workflows/deploy.yml",
+  purpose: "Test on every push, deploy only from main",
+  code: `<span class="kw">name:</span> Deploy App
+<span class="kw">on:</span>
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+<span class="kw">jobs:</span>
+  <span class="fn">test:</span>
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: <span class="str">'18'</span>
+      - run: npm ci
+      - run: npm test
+
+  <span class="fn">deploy:</span>
+    needs: test
+    if: github.ref == <span class="str">'refs/heads/main'</span>
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci --production
+      - run: <span class="cmt"># deploy step here (SSH, rsync, etc.)</span>
+        env:
+          DEPLOY_KEY: \${{ secrets.DEPLOY_KEY }}`,
+  desc: "Talk through it: \"Every push and PR triggers the test job. The deploy job only runs after tests pass, and only on main — that's what the <code>needs</code> and <code>if</code> conditions do. Secrets are pulled from GitHub's encrypted store, never hardcoded.\""
+}];
+const list = document.getElementById('examples-list');
+examples.forEach(s => {
+  const el = document.createElement('div');
+  el.className='script';
+  el.innerHTML = `<div class="script-head"><div class="script-name">${s.name}</div><div class="script-purpose">${s.purpose}</div></div><pre>${s.code}</pre><div class="script-desc">${s.desc}</div>`;
+  list.appendChild(el);
+});
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

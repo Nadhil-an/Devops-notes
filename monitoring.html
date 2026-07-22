@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Monitoring, Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;--panel:#141B24;--line:#26303C;
+    --prom:#E6522C;--graf:#F46800;--blue:#58A6FF;--green:#3FB950;--amber:#D29922;--purple:#BC8CFF;
+    --text:#E6EDF3;--muted:#8B98A5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(circle at 15% 0%, rgba(230,82,44,0.12), transparent 45%),radial-gradient(circle at 90% 10%, rgba(244,104,0,0.08), transparent 40%),var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+  .hero{padding:34px 30px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg, rgba(230,82,44,0.10), rgba(20,27,36,0.4));margin-bottom:28px;}
+  .hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--prom);text-transform:uppercase;margin-bottom:10px;}
+  .hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,5vw,46px);margin:0 0 10px;line-height:1.05;letter-spacing:-.01em;}
+  .hero h1 span{color:var(--prom);}
+  .hero p{color:var(--muted);max-width:580px;margin:0 0 20px;font-size:15px;line-height:1.55;}
+  .hero-graph{width:100%;max-width:600px;display:block;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;border-bottom:1px solid var(--line);padding-bottom:14px;}
+  .tab{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;}
+  .tab:hover{color:var(--text);border-color:#3a4550;}
+  .tab.active{color:#fff;background:var(--prom);border-color:var(--prom);font-weight:600;}
+  .section{display:none;animation:fade .25s ease;}
+  .section.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0 0 4px;}
+  .section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+  .diagram-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:24px;}
+  .diagram-panel svg{width:100%;height:auto;display:block;}
+  .diagram-caption{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--prom);border-radius:12px;padding:16px 18px;}
+  .card .tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--prom);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+  .card .q{font-size:14.5px;font-weight:600;line-height:1.4;margin-bottom:10px;}
+  .card .a{font-size:13px;line-height:1.55;color:#D6E2EE;margin:0;font-style:italic;padding-top:10px;border-top:1px solid var(--line);}
+  .table-scroll{width:100%;overflow-x:auto;}
+  .cmd-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .cmd-table th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.06em;padding:8px 12px;border-bottom:1px solid var(--line);}
+  .cmd-table td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  .cmd-table code{font-family:'JetBrains Mono',monospace;background:rgba(230,82,44,0.14);color:#FF8A5C;padding:2px 7px;border-radius:5px;font-size:12.5px;white-space:nowrap;}
+  .cmd-table tr:last-child td{border-bottom:none;}
+  .badge-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);color:var(--muted);}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:40px;font-family:'JetBrains Mono',monospace;}
+  @media(max-width:768px){.wrap{padding:24px 14px 60px;}.hero{padding:24px 18px;}.hero p{font-size:14px;}.diagram-panel{padding:16px;}.grid{grid-template-columns:1fr;gap:12px;}.section-title{font-size:19px;}}
+  @media(max-width:480px){.wrap{padding:18px 10px 50px;}.hero{padding:20px 14px;border-radius:14px;}.hero h1{font-size:26px;}.tabs{gap:5px;padding-bottom:10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px;}.tabs::-webkit-scrollbar{display:none;}.tab{padding:8px 12px;font-size:11.5px;flex:0 0 auto;}.card{padding:14px 15px;}.card .q{font-size:13.5px;}.card .a{font-size:12.5px;}.cmd-table th,.cmd-table td{padding:8px;font-size:12px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-eyebrow">// entry-level interview prep</div>
+    <h1>Monitoring, <span>Explained</span></h1>
+    <p>Prometheus and Grafana — how you actually know a server is unhealthy before your users tell you. Spoken answers plus a real alert rule.</p>
+    <svg class="hero-graph" viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg">
+      <text x="20" y="30" fill="#8B98A5" font-family="JetBrains Mono" font-size="12">ALERT: HighCPUUsage</text>
+      <text x="20" y="55" fill="#E6522C" font-family="JetBrains Mono" font-size="12">instance=web-1  cpu=92%</text>
+      <text x="20" y="75" fill="#3FB950" font-family="JetBrains Mono" font-size="12">firing → Slack #alerts</text>
+    </svg>
+  </div>
+  <div class="badge-row"><span class="badge">30+ answers</span><span class="badge">real alert rule</span><span class="badge">2 diagrams</span><span class="badge">interview-ready</span></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="basics">Basics</button>
+    <button class="tab" data-tab="prometheus">Prometheus</button>
+    <button class="tab" data-tab="grafana">Grafana</button>
+    <button class="tab" data-tab="alerts">Alerting</button>
+    <button class="tab" data-tab="examples">Real Config</button>
+    <button class="tab" data-tab="common">Common Qs</button>
+  </div>
+
+  <div class="section active" id="basics">
+    <h2 class="section-title">Basics</h2>
+    <p class="section-sub">Why monitoring matters, and the three pillars of observability.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="30" width="190" height="100" rx="10" fill="#141B24" stroke="#E6522C"/>
+        <text x="125" y="55" text-anchor="middle" fill="#E6522C" font-family="Space Grotesk" font-weight="600" font-size="13">Metrics</text>
+        <text x="125" y="78" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">numbers over time</text>
+        <text x="125" y="96" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">CPU, memory, requests/sec</text>
+
+        <rect x="255" y="30" width="190" height="100" rx="10" fill="#141B24" stroke="#58A6FF"/>
+        <text x="350" y="55" text-anchor="middle" fill="#58A6FF" font-family="Space Grotesk" font-weight="600" font-size="13">Logs</text>
+        <text x="350" y="78" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">what actually happened</text>
+        <text x="350" y="96" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">error messages, events</text>
+
+        <rect x="480" y="30" width="190" height="100" rx="10" fill="#141B24" stroke="#BC8CFF"/>
+        <text x="575" y="55" text-anchor="middle" fill="#BC8CFF" font-family="Space Grotesk" font-weight="600" font-size="13">Traces</text>
+        <text x="575" y="78" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">a request's full journey</text>
+        <text x="575" y="96" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">across services</text>
+      </svg>
+      <div class="diagram-caption">The three pillars of observability — Prometheus/Grafana focus mainly on metrics</div>
+    </div>
+    <div class="grid" id="basics-grid"></div>
+  </div>
+
+  <div class="section" id="prometheus">
+    <h2 class="section-title">Prometheus</h2>
+    <p class="section-sub">The tool that collects and stores metrics.</p>
+    <div class="diagram-panel">
+      <svg viewBox="0 0 700 150" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="50" width="150" height="50" rx="8" fill="#141B24" stroke="#E6522C"/>
+        <text x="105" y="80" text-anchor="middle" fill="#E6522C" font-family="JetBrains Mono" font-weight="600" font-size="12">Prometheus</text>
+
+        <path d="M105,50 L105,20" stroke="#E6522C" stroke-width="1.5"/>
+        <text x="105" y="15" text-anchor="middle" fill="#8B98A5" font-family="Inter" font-size="10">pulls metrics every 15s</text>
+
+        <path d="M180,60 L230,35" stroke="#E6522C" stroke-width="1.5" marker-end="url(#p1)"/>
+        <path d="M180,75 L230,75" stroke="#E6522C" stroke-width="1.5" marker-end="url(#p1)"/>
+        <path d="M180,90 L230,115" stroke="#E6522C" stroke-width="1.5" marker-end="url(#p1)"/>
+
+        <rect x="240" y="15" width="130" height="40" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="305" y="40" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="10">app :9100/metrics</text>
+        <rect x="240" y="55" width="130" height="40" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="305" y="80" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="10">node exporter</text>
+        <rect x="240" y="95" width="130" height="40" rx="6" fill="#1B2430" stroke="#26303C"/>
+        <text x="305" y="120" text-anchor="middle" fill="#E6EDF3" font-family="JetBrains Mono" font-size="10">db exporter</text>
+
+        <text x="530" y="80" fill="#8B98A5" font-family="Inter" font-size="11" text-anchor="middle">Prometheus "scrapes" —</text>
+        <text x="530" y="98" fill="#8B98A5" font-family="Inter" font-size="11" text-anchor="middle">it pulls, targets don't push</text>
+
+        <defs><marker id="p1" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto-start-reverse"><path d="M7,0 L0,3.5 L7,7 z" fill="#E6522C"/></marker></defs>
+      </svg>
+      <div class="diagram-caption">Pull-based model — Prometheus reaches out and scrapes each target on a schedule</div>
+    </div>
+    <div class="grid" id="prometheus-grid"></div>
+  </div>
+
+  <div class="section" id="grafana">
+    <h2 class="section-title">Grafana</h2>
+    <p class="section-sub">Turning raw metrics into dashboards people actually look at.</p>
+    <div class="grid" id="grafana-grid"></div>
+  </div>
+
+  <div class="section" id="alerts">
+    <h2 class="section-title">Alerting</h2>
+    <p class="section-sub">Getting notified before a user has to tell you something's down.</p>
+    <div class="grid" id="alerts-grid"></div>
+  </div>
+
+  <div class="section" id="examples">
+    <h2 class="section-title">A Real Alert Rule</h2>
+    <p class="section-sub">A Prometheus rule that fires when CPU usage is too high.</p>
+    <div class="diagram-panel">
+      <div class="table-scroll">
+      <table class="cmd-table">
+        <tr><th>Concept</th><th>PromQL / config piece</th></tr>
+        <tr><td>CPU usage query</td><td><code>100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)</code></td></tr>
+        <tr><td>Alert condition</td><td><code>expr: cpu_usage > 90</code></td></tr>
+        <tr><td>How long before firing</td><td><code>for: 5m</code></td></tr>
+        <tr><td>Where it notifies</td><td>Alertmanager → Slack / email / PagerDuty</td></tr>
+      </table>
+      </div>
+      <div class="diagram-caption">"CPU over 90% for 5 straight minutes → fire an alert" — the shape of almost every alert rule</div>
+    </div>
+  </div>
+
+  <div class="section" id="common">
+    <h2 class="section-title">Common Interview Questions</h2>
+    <p class="section-sub">Practice these out loud.</p>
+    <div class="grid" id="common-grid"></div>
+  </div>
+
+  <footer>tap a tab above to jump between topics</footer>
+</div>
+
+<script>
+const data = {
+  basics: [
+    ["Basics","Why does monitoring matter in DevOps?","Because I need to know when something is wrong before users start complaining. Monitoring gives visibility into whether servers and applications are healthy, and alerts me the moment something breaks."],
+    ["Basics","What is observability?","It's the broader idea of being able to understand what's happening inside a system from the outside, using metrics, logs, and traces together, instead of guessing."],
+    ["Basics","What is the difference between monitoring and logging?","Monitoring tracks numeric metrics over time, like CPU usage or request rate, to show trends and trigger alerts. Logging records discrete events and messages, useful for digging into exactly what happened during an issue."],
+    ["Basics","What is Prometheus?","Prometheus is an open-source monitoring tool that collects and stores metrics as time-series data, and lets me query and alert on them."],
+    ["Basics","What is Grafana?","Grafana is a visualization tool — it connects to data sources like Prometheus and turns raw metrics into dashboards and graphs that are actually readable by humans."]
+  ],
+  prometheus: [
+    ["Prometheus","How does Prometheus collect metrics?","It uses a pull model — Prometheus reaches out and 'scrapes' an HTTP endpoint on each target at a regular interval, like every 15 seconds, rather than targets pushing data to it."],
+    ["Prometheus","What is an exporter?","An exporter is a small program that exposes metrics from a system that doesn't natively speak Prometheus's format — like node_exporter for server hardware metrics, or a database-specific exporter."],
+    ["Prometheus","What is PromQL?","It's Prometheus's query language, used to filter, aggregate, and calculate values from the collected metrics — like calculating average CPU usage over the last 5 minutes."],
+    ["Prometheus","What is a time series in Prometheus?","It's a stream of data points for a specific metric and label combination over time — like cpu_usage for instance=web-1, tracked as it changes minute by minute."],
+    ["Prometheus","What is a label in Prometheus?","Labels are key-value pairs attached to a metric that let me filter and group data — like distinguishing cpu_usage{instance='web-1'} from cpu_usage{instance='web-2'}."]
+  ],
+  grafana: [
+    ["Grafana","What does Grafana actually do?","It connects to data sources, like Prometheus or a database, and renders the data as dashboards — graphs, gauges, tables — so trends and issues are visible at a glance instead of buried in raw numbers."],
+    ["Grafana","Does Grafana store data itself?","No — Grafana is purely a visualization layer. The actual metric data lives in Prometheus or whatever data source is connected; Grafana just queries and displays it."],
+    ["Grafana","What is a panel in Grafana?","A panel is a single visualization on a dashboard — like a line graph of CPU usage or a table of recent errors. A dashboard is made up of multiple panels."],
+    ["Grafana","Can Grafana send alerts too?","Yes — Grafana has its own alerting system that can evaluate panel data against thresholds and send notifications, similar to Prometheus's Alertmanager."]
+  ],
+  alerts: [
+    ["Alerting","How does alerting work with Prometheus?","I define alert rules — conditions like 'CPU usage above 90% for 5 minutes.' When a rule's condition is met, Prometheus fires the alert to Alertmanager, which handles routing it to the right notification channel."],
+    ["Alerting","What is Alertmanager?","It's a separate component that receives alerts from Prometheus and handles grouping, deduplication, silencing, and routing them to channels like Slack, email, or PagerDuty."],
+    ["Alerting","Why use a 'for' duration on an alert instead of firing instantly?","To avoid false alarms from brief spikes. Requiring a condition to hold true for several minutes before firing prevents noisy alerts for something that self-corrects immediately."],
+    ["Alerting","What is alert fatigue, and how do you avoid it?","It's when too many noisy or irrelevant alerts cause people to start ignoring them, including real ones. I'd avoid it by only alerting on things that need real action, and routing low-priority issues to dashboards instead of pages."]
+  ],
+  common: [
+    ["Common Qs","Have you set up monitoring before?","At a learning level — I understand how Prometheus scrapes metrics and how Grafana visualizes them, and I've explored setting up a basic dashboard for server health."],
+    ["Common Qs","How would you monitor a production web server?","I'd track CPU, memory, disk usage, and request latency using Prometheus with node_exporter, visualize it in Grafana, and set alerts for thresholds like high CPU or low disk space."],
+    ["Common Qs","What would you alert on for a critical API?","Error rate going above a threshold, response latency getting too high, and the service being unreachable entirely — those are the signals that actually mean users are affected."],
+    ["Common Qs","Prometheus vs traditional monitoring tools like Nagios?","Nagios is check-based and mostly binary — is a service up or down. Prometheus is built around continuous time-series metrics, which supports richer queries, trends, and more flexible alerting conditions."],
+    ["Common Qs","What's a good first dashboard to build for a new server?","CPU, memory, disk usage, and network I/O — the basic health vitals — plus application-specific metrics like request count and error rate if the app exposes them."]
+  ]
+};
+function buildGrid(id, items){
+  const grid = document.getElementById(id);
+  items.forEach(([tag,q,a])=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = `<div class="tag">${tag}</div><div class="q">${q}</div><p class="a">"${a}"</p>`;
+    grid.appendChild(card);
+  });
+}
+Object.keys(data).forEach(k => buildGrid(k+'-grid', data[k]));
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
